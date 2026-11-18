@@ -7,6 +7,7 @@
 </head>
 <body>
 <title>Butter Bunny POS</title>
+<script>try { document.documentElement.dataset.theme = localStorage.getItem("bb-theme") === "dark" ? "dark" : "light"; } catch { document.documentElement.dataset.theme = "light"; }</script>
 <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="/vendor/fonts/itim/400.css">
@@ -18,7 +19,7 @@
 <style>
 /* Layout: soft counter POS — slim side rail (bottom bar on phones), product photo grid, ticket panel; calm low-contrast surfaces */
 :root{
-  --bg:#FFF7FA; --surface:#FFFFFF; --soft:#FCEEF3; --line:#F3DCE5;
+  --bg:#FFFAFC; --surface:#FFFFFF; --soft:#FFF0F5; --line:#F7E1EA;
   --fg:#4A2F3A; --muted:#9A7D88;
   --accent:#C8456F; --on-accent:#FFFFFF; --accent-soft:#FCE3EC; --accent-ink:#A8355C;
   --peach:#C96F55; --peach-soft:#FDEBE4;
@@ -30,23 +31,23 @@
   --ff-body:"IBM Plex Sans Thai Looped","IBM Plex Sans Thai",system-ui,-apple-system,sans-serif;
   --r:18px; --r-sm:10px;
   --ff-brand:"Itim","Mitr",system-ui,sans-serif;
-  --dot:rgb(232 120 160/.13); --brand-ink:#8E3B5E;
+  --dot:rgb(232 120 160/.10); --brand-ink:#8E3B5E;
   --kraft:#FBE1EA; --kraft-edge:#EDB4C8; --kraft-ink:#6E3550; --ink:#C2416B;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#1E1519; --surface:#291D23; --soft:#33252C; --line:#45323B;
-  --fg:#F6E8EE; --muted:#B99DAA;
-  --accent:#F48FB1; --on-accent:#3A0E20; --accent-soft:#4A2535; --accent-ink:#F9B9CF;
-  --peach:#F2A98F; --peach-soft:#45302A; --rose:#F28B8B; --rose-soft:#4A2828;
-  --sky:#A9B2EE; --sky-soft:#2A2C44; --honey:#EBC46E; --honey-soft:#3F3420;
-  --shadow:0 1px 2px rgb(0 0 0/.3),0 6px 20px rgb(0 0 0/.25); --dot:rgb(255 190 215/.05); --brand-ink:#FFC4D8; --kraft:#4A2C39; --kraft-edge:#6E4558; --kraft-ink:#F8DCE7; --ink:#FF9DBB; color-scheme:dark}}
+  --bg:#241912; --surface:#33241A; --soft:#402E21; --line:#55402D;
+  --fg:#FBEEDC; --muted:#CDB394;
+  --accent:#F2C14E; --on-accent:#3A2510; --accent-soft:#4D3A20; --accent-ink:#FFD877;
+  --peach:#EDA676; --peach-soft:#4A3122; --rose:#F08A7E; --rose-soft:#4C2C25;
+  --sky:#B4C0DD; --sky-soft:#323443; --honey:#F2C14E; --honey-soft:#4A3A1E;
+  --shadow:0 1px 2px rgb(0 0 0/.35),0 8px 24px rgb(0 0 0/.3); --dot:rgb(255 215 150/.05); --brand-ink:#FFD99A; --kraft:#4E3923; --kraft-edge:#73563A; --kraft-ink:#F8E6CA; --ink:#FFB27A; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#1E1519; --surface:#291D23; --soft:#33252C; --line:#45323B;
-  --fg:#F6E8EE; --muted:#B99DAA;
-  --accent:#F48FB1; --on-accent:#3A0E20; --accent-soft:#4A2535; --accent-ink:#F9B9CF;
-  --peach:#F2A98F; --peach-soft:#45302A; --rose:#F28B8B; --rose-soft:#4A2828;
-  --sky:#A9B2EE; --sky-soft:#2A2C44; --honey:#EBC46E; --honey-soft:#3F3420;
-  --shadow:0 1px 2px rgb(0 0 0/.3),0 6px 20px rgb(0 0 0/.25); --dot:rgb(255 190 215/.05); --brand-ink:#FFC4D8; --kraft:#4A2C39; --kraft-edge:#6E4558; --kraft-ink:#F8DCE7; --ink:#FF9DBB; color-scheme:dark}
+  --bg:#241912; --surface:#33241A; --soft:#402E21; --line:#55402D;
+  --fg:#FBEEDC; --muted:#CDB394;
+  --accent:#F2C14E; --on-accent:#3A2510; --accent-soft:#4D3A20; --accent-ink:#FFD877;
+  --peach:#EDA676; --peach-soft:#4A3122; --rose:#F08A7E; --rose-soft:#4C2C25;
+  --sky:#B4C0DD; --sky-soft:#323443; --honey:#F2C14E; --honey-soft:#4A3A1E;
+  --shadow:0 1px 2px rgb(0 0 0/.35),0 8px 24px rgb(0 0 0/.3); --dot:rgb(255 215 150/.05); --brand-ink:#FFD99A; --kraft:#4E3923; --kraft-edge:#73563A; --kraft-ink:#F8E6CA; --ink:#FFB27A; color-scheme:dark}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{background:var(--bg);color:var(--fg);font-family:var(--ff-body);font-size:15px;line-height:1.55;font-variant-numeric:tabular-nums}
@@ -66,6 +67,9 @@ h2{font-size:21px} h3{font-size:16px}
 .rail button:hover{background:var(--soft)}
 .rail button[aria-current="true"]{background:var(--accent-soft);color:var(--accent-ink);font-weight:500}
 .rail .spacer{flex:1}
+.theme-fab{position:fixed;top:calc(16px + env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));z-index:20;display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:8px 14px;cursor:pointer;box-shadow:var(--shadow);font:inherit;font-size:13px}
+.theme-fab svg{width:18px;height:18px}
+.theme-fab:hover{border-color:var(--accent)}
 .rail .count{position:absolute;top:4px;right:10px;background:var(--peach);color:#fff;border-radius:999px;font-size:11px;min-width:18px;line-height:18px;padding:0 5px}
 .main{min-width:0;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .main>section{max-width:1280px;margin:0 auto}
@@ -444,6 +448,8 @@ const ICON = {
   members:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>',
   report:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
   shop:'<path d="M4 10 6 4h12l2 6"/><path d="M4 10a3 3 0 0 0 5 0 3 3 0 0 0 6 0 3 3 0 0 0 5 0v10H4Z"/><path d="M10 20v-5h4v5"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z"/>',
   lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
   cash:'<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/>',
   qr:'<rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2"/>',
@@ -469,6 +475,14 @@ const q3 = n => "#" + String(n || 0).padStart(3, "0");
 const initial = s => [...String(s || "?").trim()][0] || "?";
 const libs = {};
 const loadLib = k => libs[k] ||= new Promise((res, rej) => { const s = document.createElement("script"); s.src = LIB[k]; s.onload = res; s.onerror = () => { delete libs[k]; rej(new Error("โหลดไลบรารีไม่สำเร็จ")); }; document.head.appendChild(s); });
+const isDark = () => document.documentElement.dataset.theme === "dark";
+function toggleTheme(){
+  const next = isDark() ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem("bb-theme", next); } catch {}
+  render();
+}
+const themeBtnLabel = () => isDark() ? "โหมดสว่าง" : "โหมดมืด";
 const ss = {get(k){ try { return JSON.parse(sessionStorage.getItem(k)); } catch { return null; } }, set(k,v){ try { sessionStorage.setItem(k, JSON.stringify(v)); } catch {} }};
 
 /* ================= state ================= */
@@ -588,7 +602,7 @@ function loginShell(inner){
   const sh = shop(), [n1, n2] = splitName(sh.name);
   const pics = S.menu.filter(m => itemImg(m) && m.active !== false).slice(0, 7);
   const h = new Date().getHours(), greet = h < 11 ? "อรุณสวัสดิ์" : h < 16 ? "สวัสดีตอนบ่าย" : "สวัสดีตอนเย็น";
-  return `<div class="login">
+  return `<button class="theme-fab" data-themetoggle aria-label="${themeBtnLabel()}">${svg(isDark() ? "sun" : "moon", 18)}${themeBtnLabel()}</button><div class="login">
     <div class="brand-side">
       <div class="brand-logo">${bunny(170)}</div>
       <h1 class="brand-name">${esc(n1)}</h1>
@@ -650,6 +664,7 @@ function draw(){
       <div class="logo" title="${esc(shop().name)}">${BUNNY}</div>
       ${NAV.filter(n => !n[2] || isMgr()).map(([k,l]) => `<button data-nav="${k}" aria-current="${S.view===k}">${svg(k)}<span>${l}</span>${k==="orders"&&pend?`<span class="count">${pend}</span>`:""}</button>`).join("")}
       <div class="spacer"></div>
+      <button data-themetoggle title="${themeBtnLabel()}">${svg(isDark() ? "sun" : "moon")}<span>${isDark() ? "สว่าง" : "มืด"}</span></button>
       <button data-lock>${svg("lock")}<span>ล็อก</span></button>
     </nav>
     <div class="main">${S.readOnlyMsg ? `<div class="notice">${esc(S.readOnlyMsg)}</div>` : ""}${views[S.view]()}</div>
@@ -1439,6 +1454,7 @@ document.addEventListener("click", async e => {
   if (d.pin) { if (pinBuf.length < 4) { pinBuf += d.pin; drawDots(); if (pinBuf.length === 4) tryPin(); } return; }
   if ("pindel" in d) { pinBuf = pinBuf.slice(0, -1); return drawDots(); }
   if ("pinback" in d) { pinFor = null; return render(); }
+  if ("themetoggle" in d) return toggleTheme();
   if ("lock" in d) return lock();
   if (d.nav) { clearDraft(); S.view = d.nav; ss.set("crumb-view", d.nav); if (d.nav === "report") S.rep.orders = null; window.scrollTo(0, 0); return render(); }
   if (d.cat) { S.cat = d.cat; return render(); }
