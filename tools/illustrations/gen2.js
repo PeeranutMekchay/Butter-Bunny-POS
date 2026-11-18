@@ -1,7 +1,7 @@
 // Second batch of 640x480 menu illustrations (same visual system as gen.js).
 const {chromium} = require('playwright');
 const path = require('path');
-const out = path.join(__dirname, '..', '..', 'assets', 'illustrations');
+const out = path.join(__dirname, '..', '..', 'public', 'assets', 'illustrations');
 
 const BG = {bread:['#FCEBC8','#F6D99E'], cake:['#FBE0E3','#F4C3CB'], coffee:['#F3E3D6','#E6C9B3'], drink:['#DDEDF5','#BBDDEC'], juice:['#FFE8CF','#FFD0A1'], matcha:['#E3F0DA','#C8E2B8'], pink:['#FDE4EC','#F8C6D6'], other:['#E6F0E2','#CFE3C6']};
 const wrap = (bg, body) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" width="640" height="480">

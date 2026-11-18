@@ -37,7 +37,7 @@ const items = {
   await p.setContent(`<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Itim&display=swap">`);
   for (const [id, svg] of Object.entries(items)) {
     await p.setContent(`<html><body style="margin:0">${svg}</body></html>`);
-    await p.screenshot({path: path.join(__dirname, '..', '..', 'assets', 'illustrations', id + '.jpg'), type: 'jpeg', quality: 86, clip: {x:0, y:0, width:640, height:480}});
+    await p.screenshot({path: path.join(__dirname, '..', '..', 'public', 'assets', 'illustrations', id + '.jpg'), type: 'jpeg', quality: 86, clip: {x:0, y:0, width:640, height:480}});
   }
   await b.close();
 })();

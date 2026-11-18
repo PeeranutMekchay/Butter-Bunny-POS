@@ -8,8 +8,12 @@
 <body>
 <title>Butter Bunny POS</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Itim&family=Mitr:wght@400;500&family=IBM+Plex+Sans+Thai+Looped:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/vendor/fonts/itim/400.css">
+<link rel="stylesheet" href="/vendor/fonts/mitr/400.css">
+<link rel="stylesheet" href="/vendor/fonts/mitr/500.css">
+<link rel="stylesheet" href="/vendor/fonts/ibm-plex-sans-thai-looped/400.css">
+<link rel="stylesheet" href="/vendor/fonts/ibm-plex-sans-thai-looped/500.css">
+<link rel="stylesheet" href="/vendor/fonts/ibm-plex-sans-thai-looped/600.css">
 <style>
 /* Layout: soft counter POS — slim side rail (bottom bar on phones), product photo grid, ticket panel; calm low-contrast surfaces */
 :root{
@@ -416,6 +420,7 @@ body{background-image:radial-gradient(var(--dot) 1.6px,transparent 1.9px);backgr
 <div id="toastRoot"></div>
 <div id="pdfStage" aria-hidden="true"></div>
 
+<script src="/shared/pricing.js"></script>
 <script>
 (() => {
 /* ================= constants & helpers ================= */
@@ -426,9 +431,9 @@ const PROMO_T = {percent:"ลดเป็น %", amount:"ลดบาทต่�
 const DAYS = ["อา","จ","อ","พ","พฤ","ศ","ส"];
 const SWEET = ["0%","25%","50%","100%","120%"];
 const LIB = {
-  jspdf:"https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
-  h2c:"https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
-  qr:"https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"
+  jspdf:"/vendor/jspdf/jspdf.umd.min.js",
+  h2c:"/vendor/html2canvas/html2canvas.min.js",
+  qr:"/vendor/qrcode/qrcode.js"
 };
 const ICON = {
   pos:'<path d="M6 7h12l-1 12H7L6 7Z"/><path d="M9 7a3 3 0 0 1 6 0"/>',
@@ -464,7 +469,6 @@ const initial = s => [...String(s || "?").trim()][0] || "?";
 const libs = {};
 const loadLib = k => libs[k] ||= new Promise((res, rej) => { const s = document.createElement("script"); s.src = LIB[k]; s.onload = res; s.onerror = () => { delete libs[k]; rej(new Error("โหลดไลบรารีไม่สำเร็จ")); }; document.head.appendChild(s); });
 const ss = {get(k){ try { return JSON.parse(sessionStorage.getItem(k)); } catch { return null; } }, set(k,v){ try { sessionStorage.setItem(k, JSON.stringify(v)); } catch {} }};
-async function sha(s){ const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2,"0")).join(""); }
 
 /* ================= state ================= */
 const S = {
@@ -473,107 +477,108 @@ const S = {
   staffMe: null, view: "pos",
   cart: [], otype: "dine", cat: "all", query: "", coupon: "", manualDisc: 0, member: null, voucher: null, note: "",
   rep: {range: "today", from: dayKey(Date.now()), to: dayKey(Date.now()), orders: null, loading: false},
-  ticketOpen: false, readOnlyMsg: ""
+  ticketOpen: false, readOnlyMsg: "", online: true, pub: null, todayKey: null
 };
-const shop = () => ({name:"Butter Bunny บัตเตอร์บันนี่", branch:"", address:"", phone:"", taxId:"", promptpay:"", vat:"incl", tagline:"เบเกอรี่อบสดทุกเช้า & กาแฟหอมกรุ่น", footer:"ขอบคุณที่แวะมาหาเจ้ากระต่ายเนยนะคะ แล้วมาอีกน้า", pointsPer:25, redeemPts:100, redeemBaht:50, ...S.shop});
+const shop = () => ({...BBPricing.DEFAULT_SHOP, ...S.shop});
 const isMgr = () => S.staffMe?.role === "manager";
-const itemImg = m => m.imgId ? "/_blob/" + m.imgId : (m.img || "");
+const itemImg = m => (m && m.img) || "";
 const stockOf = id => { const s = S.stock[id]; return s && typeof s.qty === "number" ? s.qty : null; };
 
-/* ================= store layer ================= */
+/* ================= server API ================= */
+const api = {
+  token: ss.get("bb-token") || null,
+  async req(method, url, body, blob){
+    const headers = {};
+    if (this.token) headers.Authorization = "Bearer " + this.token;
+    let payload;
+    if (blob) { payload = blob; headers["Content-Type"] = blob.type || "application/octet-stream"; }
+    else if (body !== undefined) { payload = JSON.stringify(body); headers["Content-Type"] = "application/json"; }
+    let res;
+    try { res = await fetch(url, {method, headers, body: payload}); }
+    catch { if (S.online) { S.online = false; render(); } throw new Error("เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ตรวจว่าเปิดเซิร์ฟเวอร์อยู่ (npm start)"); }
+    if (!S.online) { S.online = true; render(); }
+    const data = (res.headers.get("content-type") || "").includes("json") ? await res.json() : null;
+    if (res.status === 401 && this.token && !url.startsWith("/api/auth/")) endSession("หมดเวลาการเข้าสู่ระบบ ใส่ PIN อีกครั้ง");
+    if (!res.ok) { const err = new Error(data?.error || "เกิดข้อผิดพลาด (" + res.status + ")"); err.status = res.status; throw err; }
+    return data;
+  },
+  setToken(t){ this.token = t; ss.set("bb-token", t); store.connect(); }
+};
 const store = {
-  mode: "local", db: null, assets: null, downloads: null, user: null, local: {}, subs: {}, dayKeyNow: dayKey(Date.now()),
+  downloads: true, es: null, refreshT: null,
   async init(){
-    const use = n => window.claude?.use ? window.claude.use(n).catch(() => null) : Promise.resolve(null);
-    [this.db, this.user, this.assets, this.downloads] = await Promise.all([use("db"), use("user"), use("assets"), use("downloads")]);
-    if (this.db) this.mode = "db"; else { try { this.local = JSON.parse(localStorage.getItem("crumb-pos-v2") || "{}"); } catch { this.local = {}; } }
-    this.watch("menu", docs => { S.menu = docs; S.loaded.menu = true; });
-    this.watch("stock", docs => { S.stock = Object.fromEntries(docs.map(d => [d.id, d])); });
-    this.watch("promos", docs => { S.promos = docs; });
-    this.watch("rewards", docs => { S.rewards = docs; });
-    this.watch("members", docs => { S.members = docs; });
-    this.watch("staff", docs => { S.staff = docs; S.loaded.staff = true; if (S.staffMe) { const me = docs.find(d => d.id === S.staffMe.id); if (!me || me.active === false) lock(); else S.staffMe = me; } });
-    this.watch("config", docs => { S.shop = docs.find(d => d.id === "shop") || {}; });
-    this.watchToday();
-    setInterval(() => { if (dayKey(Date.now()) !== this.dayKeyNow) { this.dayKeyNow = dayKey(Date.now()); this.watchToday(); } }, 60000);
-    setTimeout(() => { if (!S.loaded.staff) { S.loaded.staff = true; S.loaded.menu = true; S.readOnlyMsg = "ยังเชื่อมต่อฐานข้อมูลไม่ได้ ข้อมูลอาจยังไม่อัปเดต"; render(); } }, 10000);
+    await this.loadPublic();
+    if (api.token) await this.refresh();
+    this.connect();
+    // a new day starts a fresh queue and order board
+    setInterval(() => { if (S.staffMe && S.todayKey && dayKey(Date.now()) !== S.todayKey) this.refresh(); }, 60000);
   },
-  dayColl(k){ return "days/" + k + "/orders"; },
-  redeemColl(k){ return "days/" + k + "/redeems"; },
-  watchToday(){ const k = this.dayKeyNow; this.watch(this.dayColl(k), docs => { S.today = docs.sort((a,b) => b.createdAt - a.createdAt); }, "today"); this.watch(this.redeemColl(k), docs => { S.todayRedeems = docs; }, "todayRedeems"); },
-  watch(coll, cb, slot = coll){
-    this.subs[slot]?.();
-    if (this.mode === "db") {
-      this.subs[slot] = this.db.collection(coll).onSnapshot(s => { cb(s.docs.map(d => ({id:d.id, ...d.data()}))); render(); },
-        e => { S.readOnlyMsg = "โหลดข้อมูลไม่สำเร็จ (" + e.code + ") ลองเปิดหน้านี้ใหม่"; render(); });
-    } else {
-      const fire = () => { cb(Object.entries(this.local[coll] || {}).map(([id, d]) => ({id, ...d}))); render(); };
-      this.subs[slot] = () => { this.localSubs[slot] = null; };
-      this.localSubs[slot] = {coll, fire}; fire();
-    }
+  async loadPublic(){
+    try {
+      const p = await api.req("GET", "/api/public"); S.pub = p;
+      if (!S.staffMe) { S.staff = p.staff; S.shop = p.shop; S.menu = p.menu; }
+      S.readOnlyMsg = "";
+    } catch (e) { S.readOnlyMsg = e.message; }
+    S.loaded.staff = S.loaded.menu = true; render();
   },
-  localSubs: {},
-  persist(coll){
-    try { localStorage.setItem("crumb-pos-v2", JSON.stringify(this.local)); } catch {}
-    Object.values(this.localSubs).forEach(s => s && s.coll === coll && s.fire());
+  async refresh(){
+    try {
+      const d = await api.req("GET", "/api/bootstrap");
+      Object.assign(S, {staffMe: d.me, shop: d.shop, menu: d.menu, stock: d.stock, promos: d.promos, rewards: d.rewards, members: d.members, staff: d.staff,
+        today: d.today.orders.slice().sort((a,b) => b.createdAt - a.createdAt), todayRedeems: d.today.redeems, todayKey: d.today.day, readOnlyMsg: ""});
+      S.loaded.menu = S.loaded.staff = true;
+      if (S.member) S.member = S.members.find(m => m.id === S.member.id) || null;
+    } catch (e) { if (e.status !== 401) S.readOnlyMsg = e.message; }
+    render();
   },
-  async write(fn){
-    try { await fn(); return true; }
-    catch (e) {
-      const c = e?.code;
-      if (c === "invalid_argument") toast("ไม่มีสิทธิ์บันทึกส่วนนี้ ผู้จัดการต้องได้สิทธิ์ Editor ในเมนู Share");
-      else if (c === "quota_exceeded") toast("ที่เก็บข้อมูลเต็ม ลบออเดอร์เก่าในหน้าร้านค้าก่อน");
-      else toast("บันทึกไม่สำเร็จ ลองอีกครั้ง");
-      return false;
-    }
+  soon(){ clearTimeout(this.refreshT); this.refreshT = setTimeout(() => S.staffMe ? this.refresh() : this.loadPublic(), 150); },
+  connect(){
+    this.es?.close();
+    const es = this.es = new EventSource("/api/events?token=" + encodeURIComponent(api.token || ""));
+    es.onmessage = e => {
+      let d = {}; try { d = JSON.parse(e.data || "{}"); } catch {}
+      // the greeting after (re)connecting only needs a refresh if we were cut off and may have missed changes
+      if (d.topics?.[0] === "hello") { const missed = !S.online || this.wasOffline; this.wasOffline = false; if (!S.online) { S.online = true; render(); } if (!missed) return; }
+      this.soon();
+    };
+    es.onerror = () => { this.wasOffline = true; if (S.online) { S.online = false; render(); } };
   },
-  set(coll, id, data){
-    if (this.mode === "db") return this.write(() => this.db.collection(coll).doc(id).set(data));
-    (this.local[coll] ||= {})[id] = JSON.parse(JSON.stringify(data)); this.persist(coll); return Promise.resolve(true);
+  // runs one API call; shows the server's message and returns null when it fails
+  async call(method, url, body){
+    try { const r = (await api.req(method, url, body)) || {ok: true}; this.soon(); return r; }
+    catch (e) { toast(e.message); return null; }
   },
-  update(coll, id, data){
-    if (this.mode === "db") return this.write(() => this.db.collection(coll).doc(id).update(data));
-    const c = (this.local[coll] ||= {}); c[id] = {...(c[id] || {}), ...data}; this.persist(coll); return Promise.resolve(true);
-  },
-  del(coll, id){
-    if (this.mode === "db") return this.write(() => this.db.collection(coll).doc(id).delete());
-    if (this.local[coll]) delete this.local[coll][id]; this.persist(coll); return Promise.resolve(true);
-  },
-  async getDay(k){
-    if (k === this.dayKeyNow) return S.today.slice();
-    if (this.mode !== "db") return Object.entries(this.local[this.dayColl(k)] || {}).map(([id,d]) => ({id, ...d}));
-    const out = []; let after = -1;
-    for (let i = 0; i < 10; i++) {
-      const s = await this.db.collection(this.dayColl(k)).where("createdAt", ">", after).orderBy("createdAt", "asc").limit(1000).get();
-      s.docs.forEach(d => out.push({id:d.id, ...d.data()}));
-      if (s.size < 1000) break; after = out[out.length - 1].createdAt;
-    }
-    return out;
-  },
-  async uploadImage(blob){
-    if (this.assets) { try { const r = await this.assets.upload(blob, {type:"image/jpeg"}); return {imgId: r.id, img: null}; } catch {} }
-    const url = await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(blob); });
-    return {img: url, imgId: null};
-  },
+  async uploadImage(blob){ const r = await api.req("POST", "/api/uploads", undefined, blob); return {img: r.url}; },
+  async getRange(from, to){ return (await api.req("GET", `/api/orders?from=${from}&to=${to}`)).orders; },
   async save(filename, data){
-    if (!this.downloads) { toast("หน้าจอนี้ดาวน์โหลดไฟล์ไม่ได้ ลองเปิดในเบราว์เซอร์ผ่าน claude.ai"); return false; }
-    try { await this.downloads.save({filename, data}); toast("บันทึกไฟล์แล้ว"); return true; }
-    catch (e) { if (e?.code !== "declined") toast("บันทึกไฟล์ไม่สำเร็จ (" + (e?.code || "error") + ")"); return false; }
+    try {
+      const blob = data instanceof Blob ? data : new Blob([data], {type: filename.endsWith(".csv") ? "text/csv;charset=utf-8" : "application/pdf"});
+      const url = URL.createObjectURL(blob), a = document.createElement("a");
+      a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+      toast("ดาวน์โหลด " + filename + " แล้ว"); return true;
+    } catch { toast("ดาวน์โหลดไฟล์ไม่สำเร็จ"); return false; }
   }
 };
+function endSession(msg){
+  clearDraft();
+  api.token = null; ss.set("bb-token", null);
+  Object.assign(S, {staffMe: null, cart: [], member: null, voucher: null, coupon: "", manualDisc: 0, note: ""});
+  pinFor = null; store.loadPublic(); store.connect(); if (msg) toast(msg);
+}
 
 /* ================= auth (staff PIN) ================= */
-let pinBuf = "", pinFor = null, pinFails = 0, lockUntil = 0, idleT;
-function lock(){ S.staffMe = null; ss.set("crumb-staff", null); S.cart = []; render(); }
+let pinBuf = "", pinFor = null, idleT;
+function lock(){ if (api.token) api.req("POST", "/api/auth/logout").catch(() => {}); endSession(); }
 function bumpIdle(){ clearTimeout(idleT); if (S.staffMe) idleT = setTimeout(() => { lock(); toast("ล็อกหน้าจออัตโนมัติ เพราะไม่มีการใช้งาน 20 นาที"); }, 20 * 60000); }
 ["click","keydown","touchstart"].forEach(ev => document.addEventListener(ev, bumpIdle, {passive:true}));
 async function tryPin(){
-  const st = S.staff.find(s => s.id === pinFor);
-  if (!st) return;
-  if (Date.now() < lockUntil) { $("#pinErr").textContent = "ใส่รหัสผิดหลายครั้ง รอ " + Math.ceil((lockUntil - Date.now())/1000) + " วินาที"; pinBuf = ""; drawDots(); return; }
-  const h = await sha(st.salt + ":" + pinBuf);
-  if (h === st.pinHash) { pinFails = 0; S.staffMe = st; ss.set("crumb-staff", st.id); S.view = st.role === "manager" ? (ss.get("crumb-view") || "pos") : "pos"; pinBuf = ""; pinFor = null; render(); toast("สวัสดี " + st.name); }
-  else { pinFails++; if (pinFails >= 5) { lockUntil = Date.now() + 30000; pinFails = 0; } pinBuf = ""; drawDots(); $("#pinErr").textContent = "รหัส PIN ไม่ถูกต้อง"; }
+  const pin = pinBuf; pinBuf = ""; drawDots();
+  try {
+    const r = await api.req("POST", "/api/auth/login", {staffId: pinFor, pin});
+    api.setToken(r.token); S.staffMe = r.staff; pinFor = null;
+    S.view = r.staff.role === "manager" ? (ss.get("crumb-view") || "pos") : "pos";
+    await store.refresh(); toast("สวัสดี " + r.staff.name);
+  } catch (e) { const el = $("#pinErr"); if (el) el.textContent = e.message; }
 }
 function drawDots(){ const d = $("#dots"); if (d) d.innerHTML = [0,1,2,3].map(i => `<i class="${i < pinBuf.length ? "on" : ""}"></i>`).join(""); }
 
@@ -608,7 +613,7 @@ function renderLogin(){
       <div class="err" id="suErr"></div>
       <button class="btn primary">สร้างบัญชีและเข้าสู่ระบบ</button>
     </form>
-    ${store.mode === "local" ? `<p class="small muted">โหมดออฟไลน์: ข้อมูลเก็บในเบราว์เซอร์นี้เท่านั้น</p>` : ""}`);
+    ${S.readOnlyMsg ? `<p class="small" style="color:var(--rose)">${esc(S.readOnlyMsg)}</p>` : ""}`);
   if (pinFor) { const st = S.staff.find(s => s.id === pinFor);
     return loginShell(`
       <div class="av ${avc(st?.name)}" style="width:84px;height:84px;font-size:32px;margin:0 auto">${esc(initial(st?.name))}</div>
@@ -621,61 +626,11 @@ function renderLogin(){
     ${S.readOnlyMsg ? `<p class="small muted">${esc(S.readOnlyMsg)}</p>` : ""}`);
 }
 
-/* ================= promotions engine ================= */
-function promoLive(p, now = new Date()){
-  if (p.active === false) return false;
-  const k = dayKey(now);
-  if (p.from && k < p.from) return false;
-  if (p.to && k > p.to) return false;
-  if (p.days?.length && !p.days.includes(now.getDay())) return false;
-  if (p.start && p.end) { const t = String(now.getHours()).padStart(2,"0") + ":" + String(now.getMinutes()).padStart(2,"0"); if (t < p.start || t >= p.end) return false; }
-  return true;
-}
-const inScope = (p, l) => p.scope === "all" || (p.scope === "cat" && l.cat === p.cat) || (p.scope === "items" && (p.items || []).includes(l.id));
-function promoAmount(p, lines){
-  const L = lines.filter(l => inScope(p, l));
-  if (!L.length) return {amt:0, keys:[]};
-  let amt = 0;
-  if (p.type === "percent") amt = L.reduce((s,l) => s + l.unit * l.qty * p.value / 100, 0);
-  else if (p.type === "amount") amt = L.reduce((s,l) => s + Math.min(p.value, l.unit) * l.qty, 0);
-  else if (p.type === "bxgy") {
-    const units = L.flatMap(l => Array(l.qty).fill(l.unit)).sort((a,b) => b - a);
-    const g = (p.buy || 1) + (p.get || 1), free = Math.floor(units.length / g) * (p.get || 1);
-    amt = units.slice(units.length - free).reduce((s,v) => s + v, 0);
-  }
-  return {amt: r2(amt), keys: L.map(l => l.key)};
-}
+/* ================= promotions engine (shared with the server: /shared/pricing.js) ================= */
+const {promoLive, inScope} = BBPricing;
 function priceCart(){
-  const lines = S.cart.map(l => ({...l}));
-  const subtotal = r2(lines.reduce((s,l) => s + l.unit * l.qty, 0));
-  const code = S.coupon.trim().toUpperCase();
-  const avail = S.promos.filter(p => promoLive(p) && (!p.code || p.code.toUpperCase() === code));
-  const applied = []; const used = new Set();
-  let pool = avail.filter(p => p.type !== "minspend");
-  while (pool.length) {
-    const free = lines.filter(l => !used.has(l.key) && !l.reward);
-    const best = pool.map(p => ({p, ...promoAmount(p, free)})).sort((a,b) => b.amt - a.amt)[0];
-    if (!best || best.amt <= 0) break;
-    applied.push({id: best.p.id, name: best.p.name, amt: best.amt, keys: best.keys});
-    best.keys.forEach(k => used.add(k)); pool = pool.filter(p => p !== best.p);
-  }
-  const itemDisc = applied.reduce((s,a) => s + a.amt, 0);
-  const base = subtotal - itemDisc;
-  const bill = avail.filter(p => p.type === "minspend" && base >= (p.min || 0))
-    .map(p => ({p, amt: r2(Math.min(base, p.unit === "percent" ? base * p.value / 100 : p.value))})).sort((a,b) => b.amt - a.amt)[0];
-  if (bill && bill.amt > 0) applied.push({id: bill.p.id, name: bill.p.name, amt: bill.amt, keys: []});
-  const promoTotal = r2(applied.reduce((s,a) => s + a.amt, 0));
-  const sh = shop();
-  let after = subtotal - promoTotal;
-  const manual = r2(Math.min(after, Math.max(0, Number(S.manualDisc) || 0))); after -= manual;
-  let pointsUsed = S.member ? lines.filter(l => l.reward).reduce((s,l) => s + l.pts * l.qty, 0) : 0, pointsDisc = 0;
-  const vr = S.member && S.voucher ? S.rewards.find(r => r.id === S.voucher) : null;
-  if (vr) { pointsDisc = r2(Math.min(after, vr.value || 0)); pointsUsed += vr.points; after -= pointsDisc; }
-  const total = r2(Math.max(0, after));
-  const vat = sh.vat === "incl" ? r2(total * 7 / 107) : 0;
-  const codeValid = !code || avail.some(p => p.code && p.code.toUpperCase() === code);
-  return {lines, subtotal, applied, promoTotal, manual, pointsUsed, pointsDisc, voucherName: vr?.name || null, total, vat, codeValid,
-    pointsEarned: S.member ? Math.floor(total / Math.max(1, sh.pointsPer)) : 0};
+  return BBPricing.price({lines: S.cart, promos: S.promos, coupon: S.coupon, manualDisc: S.manualDisc, member: S.member ? curMember() : null,
+    voucher: S.member && S.voucher ? S.rewards.find(r => r.id === S.voucher) || null : null, shop: shop()});
 }
 const itemPromoTag = m => S.promos.find(p => promoLive(p) && !p.code && p.type !== "minspend" && inScope(p, {id:m.id, cat:m.cat}));
 
@@ -685,11 +640,7 @@ let renderQ = false;
 function render(){ if (renderQ) return; renderQ = true; requestAnimationFrame(() => { renderQ = false; draw(); }); }
 function draw(){
   const keepFocus = document.activeElement?.id, selS = document.activeElement?.selectionStart;
-  if (!S.staffMe) {
-    const saved = ss.get("crumb-staff"); const st = saved && S.staff.find(s => s.id === saved && s.active !== false);
-    if (st) { S.staffMe = st; S.view = ss.get("crumb-view") || "pos"; }
-  }
-  if (!S.staffMe) { $("#root").innerHTML = renderLogin(); drawDots(); restore(keepFocus, selS); return; }
+  if (!S.staffMe) { $("#root").innerHTML = renderLogin(); drawDots(); applyDraft(); restore(keepFocus, selS); return; }
   if (!isMgr() && NAV.find(n => n[0] === S.view)?.[2]) S.view = "pos";
   const pend = S.today.filter(o => o.status === "preparing").length;
   const views = {pos: viewPOS, orders: viewOrders, members: viewMembers, menu: viewMenu, promos: viewPromos, rewards: viewRewards, report: viewReport, shop: viewShop};
@@ -702,12 +653,18 @@ function draw(){
     </nav>
     <div class="main">${S.readOnlyMsg ? `<div class="notice">${esc(S.readOnlyMsg)}</div>` : ""}${views[S.view]()}</div>
   </div>`;
-  restore(keepFocus, selS);
+  applyDraft(); restore(keepFocus, selS);
   if (S.view === "report" && !S.rep.orders && !S.rep.loading) loadReport();
 }
+// Values typed into forms on the page (setup, shop settings) survive re-renders caused by live updates.
+const formDraft = {};
+const clearDraft = () => { for (const k in formDraft) delete formDraft[k]; };
+const keepDraft = e => { const t = e.target; if (t.id && t.closest?.("#root form")) formDraft[t.id] = t.type === "checkbox" ? t.checked : t.value; };
+document.addEventListener("input", keepDraft); document.addEventListener("change", keepDraft);
+function applyDraft(){ for (const [k, v] of Object.entries(formDraft)) { const el = document.getElementById(k); if (el && el.closest("#root")) { if (el.type === "checkbox") el.checked = v; else el.value = v; } } }
 function restore(id, pos){ if (!id) return; const el = document.getElementById(id); if (el && el !== document.activeElement) { el.focus(); try { if (pos != null) el.setSelectionRange(pos, pos); } catch {} } }
 const head = (title, extra = "") => `<div class="topline"><div class="ttl"><h2>${title}</h2><div class="sub">${SUB[S.view] || ""}</div></div>${extra}
-  <span class="sync"><i class="${store.mode==="db"?"on":""}"></i>${store.mode==="db"?"ซิงก์ทุกเครื่อง":"ออฟไลน์ในเครื่องนี้"}</span>
+  <span class="sync"><i class="${S.online?"on":""}"></i>${S.online?"เชื่อมต่อเซิร์ฟเวอร์แล้ว":"ขาดการเชื่อมต่อเซิร์ฟเวอร์"}</span>
   <span class="who"><span class="av ${avc(S.staffMe.name)}">${esc(initial(S.staffMe.name))}</span>${esc(S.staffMe.name)} · ${isMgr()?"ผู้จัดการ":"แคชเชียร์"}</span></div>`;
 const phHTML = (m, cls = "ph") => { const src = itemImg(m); return `<div class="${cls} ${src ? "" : "t-" + esc(m.cat)}">${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : `<span class="ini">${esc(initial(m.name))}</span>`}</div>`; };
 
@@ -849,30 +806,16 @@ async function confirmPay(){
   const P = priceCart(); const btn = $("#confirmPay");
   const tendered = payM === "cash" ? Number($("#cashIn").value) || 0 : P.total;
   if (tendered < P.total) return;
-  if (P.pointsUsed) { const cm = curMember(); if (!cm || (cm.points || 0) < P.pointsUsed) { toast("แต้มสมาชิกไม่พอสำหรับของรางวัลในบิลนี้"); return; } }
   btn.disabled = true; btn.textContent = "กำลังบันทึก…";
-  const now = Date.now(), k = dayKey(now);
   const ref = payM === "qr" ? ($("#payRef")?.value || "").trim() : payM === "card" ? [($("#cardRef")?.value||"").trim(), ($("#card4")?.value||"").trim() && "xx" + $("#card4").value.trim()].filter(Boolean).join(" ") : "";
-  const o = {queue: nextQueue(), createdAt: now, day: k, type: S.otype, status: "preparing", pay: payM, ref,
-    items: P.lines.map(l => ({id:l.id, name:l.name, cat:l.cat, unit:l.unit, qty:l.qty, opt:l.opt, sweet:l.sweet, reward:l.reward || null, pts:l.pts || 0})),
-    subtotal: P.subtotal, promos: P.applied.map(a => ({id:a.id, name:a.name, amt:a.amt})), promoTotal: P.promoTotal,
-    manual: P.manual, pointsUsed: P.pointsUsed, pointsDisc: P.pointsDisc, voucherName: P.voucherName, total: P.total, vat: P.vat,
-    tendered: r2(tendered), change: r2(tendered - P.total), note: S.note.trim(),
-    memberId: S.member?.id || null, memberName: S.member?.name || null, pointsEarned: P.pointsEarned,
-    staffId: S.staffMe.id, staffName: S.staffMe.name};
-  const id = uid("o");
-  if (!await store.set(store.dayColl(k), id, o)) { btn.disabled = false; btn.textContent = "ยืนยันรับเงิน"; return; }
-  // stock
-  const per = {}; o.items.forEach(l => per[l.id] = (per[l.id] || 0) + l.qty);
-  for (const [iid, q] of Object.entries(per)) { const m = S.menu.find(x => x.id === iid); const cur = stockOf(iid);
-    if (m?.trackStock && cur != null) await store.set("stock", iid, {qty: Math.max(0, cur - q)}); }
-  // member
-  if (S.member) { const mm = S.members.find(x => x.id === S.member.id) || S.member;
-    await store.update("members", mm.id, {points: Math.max(0, (mm.points||0) - P.pointsUsed + P.pointsEarned), visits: (mm.visits||0) + 1, spent: r2((mm.spent||0) + P.total), lastVisit: now});
-    for (const l of P.lines.filter(l => l.reward)) { const r = S.rewards.find(x => x.id === l.reward); if (r) await logRedeem(mm, r, l.qty, "bill", id); }
-    if (S.voucher) { const r = S.rewards.find(x => x.id === S.voucher); if (r) await logRedeem(mm, r, 1, "bill", id); } }
+  const r = await store.call("POST", "/api/orders", {
+    lines: S.cart.map(l => ({id: l.id, opt: l.opt, sweet: l.sweet, qty: l.qty, reward: l.reward || null})),
+    type: S.otype, pay: payM, tendered, ref, coupon: S.coupon, manualDisc: S.manualDisc, note: S.note.trim(),
+    memberPhone: S.member?.id || null, voucher: S.member && S.voucher ? S.voucher : null, expectTotal: P.total});
+  if (!r) { btn.disabled = false; btn.textContent = "ยืนยันรับเงิน"; return; }
   S.cart = []; S.coupon = ""; S.manualDisc = 0; S.member = null; S.voucher = null; S.note = ""; S.ticketOpen = false;
-  showReceipt({id, ...o}, true);
+  S.today = [r.order, ...S.today];
+  showReceipt(r.order, true);
 }
 
 /* ---------- receipt ---------- */
@@ -964,32 +907,19 @@ function viewOrders(){
     ${col("ready", "พร้อมเสิร์ฟ / รอรับ", t.filter(o => o.status === "ready").reverse())}
     ${col("done", "เสร็จแล้ว", t.filter(o => o.status === "done" || o.status === "void"))}</section>`;
 }
-async function redeemsOf(o){
-  if (o.day === store.dayKeyNow) return S.todayRedeems.filter(x => x.orderId === o.id && !x.voided);
-  if (store.mode !== "db") return Object.entries(store.local[store.redeemColl(o.day)] || {}).map(([id, d]) => ({id, ...d})).filter(x => x.orderId === o.id && !x.voided);
-  const s = await store.db.collection(store.redeemColl(o.day)).where("orderId", "==", o.id).get();
-  return s.docs.map(d => ({id: d.id, ...d.data()})).filter(x => !x.voided);
-}
 async function openVoid(o){
-  const rds = await redeemsOf(o).catch(() => []);
+  const rds = S.todayRedeems.filter(x => x.orderId === o.id && !x.voided);
   const rwCount = rds.reduce((s, x) => s + (x.qty || 1), 0);
   modal(`<div class="mh"><h2>ยกเลิกออเดอร์ ${q3(o.queue)}</h2><button class="x" data-close aria-label="ปิด">×</button></div>
     <p style="margin:0">ยอด ${baht(o.total, 1)} ชำระด้วย${PAY[o.pay]} บิลนี้จะไม่ถูกนับในยอดขาย ${o.pay !== "cash" ? "การคืนเงินผ่านพร้อมเพย์หรือบัตรต้องทำที่แอปธนาคารหรือเครื่อง EDC แยกต่างหาก" : "คืนเงินสดให้ลูกค้าจากลิ้นชัก"}</p>
     <div class="field"><label for="voidWhy">เหตุผล</label><input id="voidWhy" maxlength="80" placeholder="เช่น ลูกค้าเปลี่ยนใจ, คิดเงินผิด"></div>
     <label class="check"><input type="checkbox" id="voidStock" checked> คืนสต็อกสินค้า${rds.some(x => x.kind === "item") ? " (รวมเมนูฟรีที่แลกแต้ม)" : ""}</label>
-    ${rds.length ? `<label class="check"><input type="checkbox" id="voidReward" checked> คืนของรางวัลเข้าตู้ ${rwCount} ชิ้น (${rds.map(x => esc(x.rewardName)).join(", ")})</label>
-    <p class="small muted" style="margin:-6px 0 0 26px">แต้ม ${o.pointsUsed || 0} แต้มจะคืนให้ ${esc(o.memberName || o.memberId || "สมาชิก")} อัตโนมัติ</p>` : ""}
+    ${rds.length ? `<label class="check"><input type="checkbox" id="voidReward" checked> คืนของรางวัลเข้าตู้ ${rwCount} ชิ้น (${rds.map(x => esc(x.rewardName)).join(", ")})</label>` : ""}
+    ${o.memberId ? `<p class="small muted" style="margin:-6px 0 0 26px">แต้มของ ${esc(o.memberName || o.memberId)} จะถูกปรับคืนอัตโนมัติ (คืน ${o.pointsUsed || 0} แต้มที่ใช้ หัก ${o.pointsEarned || 0} แต้มที่ได้)</p>` : ""}
     <div class="actions"><button class="btn" data-close>ไม่ยกเลิก</button><button class="btn danger" id="voidYes">ยืนยันยกเลิก</button></div>`);
-  $("#voidYes").onclick = async () => {
-    const ok = await store.update(store.dayColl(o.day), o.id, {status:"void", voidReason: $("#voidWhy").value.trim(), voidBy: S.staffMe.name, voidAt: Date.now()});
-    if (!ok) return;
-    if ($("#voidStock").checked) { const per = {}; o.items.forEach(l => per[l.id] = (per[l.id]||0) + l.qty);
-      for (const [iid, q] of Object.entries(per)) { const cur = stockOf(iid); const m = S.menu.find(x => x.id === iid); if (m?.trackStock && cur != null) await store.set("stock", iid, {qty: cur + q}); } }
-    const backRw = $("#voidReward")?.checked;
-    for (const x of rds) { const r = S.rewards.find(w => w.id === x.rewardId);
-      if (backRw && r?.limited) await store.set("stock", "rw-" + r.id, {qty: (stockOf("rw-" + r.id) ?? 0) + (x.qty || 1)});
-      await store.update(store.redeemColl(x.day || o.day), x.id, {voided: true, voidAt: Date.now(), voidBy: S.staffMe.name, restocked: !!(backRw && r?.limited)}); }
-    if (o.memberId) { const mm = S.members.find(x => x.id === o.memberId); if (mm) await store.update("members", mm.id, {points: Math.max(0, (mm.points||0) - (o.pointsEarned||0) + (o.pointsUsed||0)), spent: Math.max(0, r2((mm.spent||0) - o.total))}); }
+  $("#voidYes").onclick = async () => { $("#voidYes").disabled = true;
+    const r = await store.call("POST", `/api/orders/${o.id}/void`, {reason: $("#voidWhy").value.trim(), restock: $("#voidStock").checked, restockRewards: !!$("#voidReward")?.checked});
+    if (!r) { $("#voidYes").disabled = false; return; }
     S.rep.orders = null; closeModal(); toast("ยกเลิกออเดอร์แล้ว");
   };
 }
@@ -1022,14 +952,14 @@ function openMember(id, thenAttach){
   $("#memForm").onsubmit = async e => { e.preventDefault();
     const phone = id || $("#mm-phone").value.replace(/\D/g, "");
     if (!/^0\d{8,9}$/.test(phone)) { $("#mmErr").textContent = "เบอร์โทรต้องขึ้นต้นด้วย 0 และมี 9–10 หลัก"; return; }
-    if (!id && S.members.some(x => x.id === phone)) { $("#mmErr").textContent = "เบอร์นี้เป็นสมาชิกอยู่แล้ว"; return; }
-    const data = id ? {name: $("#mm-name").value.trim(), ...(isMgr() ? {points: Math.max(0, Math.floor(+$("#mm-pts").value || 0))} : {})}
-      : {name: $("#mm-name").value.trim(), points: 0, visits: 0, spent: 0, createdAt: Date.now(), lastVisit: null};
-    if (await (id ? store.update("members", id, data) : store.set("members", phone, data))) {
-      closeModal(); toast(id ? "บันทึกแล้ว" : "สมัครสมาชิกแล้ว");
-      if (thenAttach) { S.member = {id: phone, ...m, ...data}; render(); } }
+    const name = $("#mm-name").value.trim();
+    const r = id ? await store.call("PATCH", "/api/members/" + id, {name, ...(isMgr() ? {points: Math.max(0, Math.floor(+$("#mm-pts").value || 0))} : {})})
+                 : await store.call("POST", "/api/members", {phone, name});
+    if (!r) return;
+    closeModal(); toast(id ? "บันทึกแล้ว" : "สมัครสมาชิกแล้ว");
+    if (thenAttach && r.member) { S.members = [r.member, ...S.members.filter(x => x.id !== r.member.id)]; S.member = r.member; render(); }
   };
-  $("#memDel") && ($("#memDel").onclick = () => confirmBox("ลบสมาชิก " + (m.name || id) + "?", "แต้มสะสมจะหายไป ประวัติการขายยังอยู่", async () => { if (await store.del("members", id)) toast("ลบสมาชิกแล้ว"); }));
+  $("#memDel") && ($("#memDel").onclick = () => confirmBox("ลบสมาชิก " + (m.name || id) + "?", "แต้มสะสมจะหายไป ประวัติการขายยังอยู่", async () => { if (await store.call("DELETE", "/api/members/" + id)) toast("ลบสมาชิกแล้ว"); }));
 }
 function pickMember(){
   modal(`<div class="mh"><h2>เลือกสมาชิก</h2><button class="x" data-close aria-label="ปิด">×</button></div>
@@ -1050,7 +980,7 @@ const TIERS = [["baby","ลูกกระต่าย",0],["butter","กระ�
 const tierOf = m => TIERS.filter(t => (m?.spent || 0) >= t[2]).pop();
 const tierPill = m => { const t = tierOf(m); return `<span class="tier ${t[0]}">${t[1]}</span>`; };
 const curMember = () => S.member ? (S.members.find(x => x.id === S.member.id) || S.member) : null;
-const rwImg = r => r.imgId ? "/_blob/" + r.imgId : r.img || (r.kind === "item" ? itemImg(S.menu.find(m => m.id === r.itemId) || {}) : "");
+const rwImg = r => r.img || (r.kind === "item" ? itemImg(S.menu.find(m => m.id === r.itemId) || {}) : "");
 const rwStock = r => r.limited ? (stockOf("rw-" + r.id) ?? 0) : Infinity;
 const ptsHeld = () => S.cart.filter(l => l.reward).reduce((s,l) => s + l.pts * l.qty, 0) + (S.voucher ? (S.rewards.find(r => r.id === S.voucher)?.points || 0) : 0);
 function rewardBlock(r, pts, mode){
@@ -1109,20 +1039,11 @@ function confirmDirect(m, r){
       <div class="side"><b>${r.points}</b><small>แต้ม</small></div></div>
     <div class="actions"><button class="btn" data-close>ยังไม่แลก</button><button class="btn primary" id="rdYes">ยืนยันและตัดแต้ม</button></div>`);
   $("#rdYes").onclick = async () => { $("#rdYes").disabled = true;
-    const cur = S.members.find(x => x.id === m.id) || m;
-    if ((cur.points || 0) < r.points) { toast("แต้มไม่พอแล้ว"); return closeModal(); }
-    if (!await store.update("members", cur.id, {points: (cur.points || 0) - r.points})) { $("#rdYes").disabled = false; return; }
-    if (r.kind === "item") { const it = S.menu.find(x => x.id === r.itemId), q = stockOf(r.itemId); if (it?.trackStock && q != null) await store.set("stock", it.id, {qty: Math.max(0, q - 1)}); }
-    const log = await logRedeem(cur, r, 1, "direct", null);
-    showStub({...log, after: (cur.points || 0) - r.points});
+    const res = await store.call("POST", "/api/redeems", {memberPhone: m.id, rewardId: r.id});
+    if (!res) { $("#rdYes").disabled = false; return; }
+    S.todayRedeems = [...S.todayRedeems.filter(x => x.id !== res.redeem.id), res.redeem];
+    showStub({...res.redeem, after: res.member.points});
   };
-}
-async function logRedeem(m, r, qty, via, orderId){
-  if (r.limited) await store.set("stock", "rw-" + r.id, {qty: Math.max(0, (stockOf("rw-" + r.id) ?? 0) - qty)});
-  const now = Date.now(), k = dayKey(now), id = uid("r");
-  const doc = {createdAt: now, day: k, memberId: m.id, memberName: m.name || "", rewardId: r.id, rewardName: r.name, kind: r.kind, qty, points: r.points * qty, staffName: S.staffMe.name, via, orderId};
-  await store.set(store.redeemColl(k), id, doc);
-  return {id, ...doc};
 }
 function showStub(x){
   modal(`<div class="stub"><div class="main"><span class="kind">${RKIND[x.kind]} · ${hm(x.createdAt)}</span><div class="nm">${esc(x.rewardName)}</div>
@@ -1145,14 +1066,8 @@ function openCancelRedeem(x){
     ${!m ? `<div class="notice" style="margin:0">ไม่พบสมาชิกคนนี้ในระบบแล้ว จึงคืนแต้มไม่ได้</div>` : ""}
     <div class="actions"><button class="btn" data-close>ไม่ยกเลิก</button><button class="btn danger" id="crYes">ยืนยันยกเลิกการแลก</button></div>`);
   $("#crYes").onclick = async () => { $("#crYes").disabled = true;
-    const cur = S.todayRedeems.find(y => y.id === x.id) || x;
-    if (cur.voided) { toast("รายการนี้ถูกยกเลิกไปแล้ว"); return closeModal(); }
-    const back = !!$("#crBack")?.checked, backStock = !!$("#crStock")?.checked;
-    if (!await store.update(store.redeemColl(x.day), x.id, {voided: true, voidAt: Date.now(), voidBy: S.staffMe.name, restocked: back})) { $("#crYes").disabled = false; return; }
-    const mm = S.members.find(y => y.id === x.memberId);
-    if (mm) await store.update("members", mm.id, {points: (mm.points || 0) + x.points});
-    if (back) await store.set("stock", "rw-" + r.id, {qty: (stockOf("rw-" + r.id) ?? 0) + q});
-    if (backStock) await store.set("stock", it.id, {qty: (stockOf(it.id) ?? 0) + q});
+    const res = await store.call("POST", `/api/redeems/${x.id}/cancel`, {restockReward: !!$("#crBack")?.checked, restockItem: !!$("#crStock")?.checked});
+    if (!res) { $("#crYes").disabled = false; return; }
     closeModal(); toast("ยกเลิกการแลกแล้ว คืน " + x.points + " แต้มให้ " + (x.memberName || x.memberId)); };
 }
 function viewRewards(){
@@ -1168,7 +1083,7 @@ function viewRewards(){
 }
 function openReward(id){
   const r = S.rewards.find(x => x.id === id) || {kind:"item", points:50, active:true, limited:false, value:50};
-  let kind = r.kind, img = {img: r.img || null, imgId: r.imgId || null};
+  let kind = r.kind, img = {img: r.img || null};
   modal(`<div class="mh"><h2>${id ? "แก้ไขของรางวัล" : "เพิ่มของรางวัล"}</h2><button class="x" data-close aria-label="ปิด">×</button></div>
     <form id="rwForm" class="form">
       <div class="field"><span class="lab">ประเภท</span><div class="opts" id="rw-kind">${Object.entries(RKIND).map(([k,v]) => `<button type="button" data-rk="${k}" aria-pressed="${kind===k}">${v}</button>`).join("")}</div></div>
@@ -1186,25 +1101,22 @@ function openReward(id){
       ? `<div class="field"><label for="rw-item">เมนูที่ให้ฟรี</label><select id="rw-item">${S.menu.map(m => `<option value="${esc(m.id)}" ${r.itemId === m.id ? "selected" : ""}>${esc(m.name)}</option>`).join("")}</select></div>`
       : kind === "discount" ? `<div class="field"><label for="rw-val">ส่วนลดกี่บาท</label><input id="rw-val" type="number" min="1" required value="${r.value || 50}"></div>` : "";
     prev(); $("#rw-item") && ($("#rw-item").onchange = prev); };
-  const prev = () => { const src = img.imgId ? "/_blob/" + img.imgId : img.img || (kind === "item" ? itemImg(S.menu.find(m => m.id === $("#rw-item")?.value) || {}) : "");
+  const prev = () => { const src = img.img || (kind === "item" ? itemImg(S.menu.find(m => m.id === $("#rw-item")?.value) || {}) : "");
     $("#rwPrev").innerHTML = src ? `<img src="${esc(src)}" alt="">` : `<span class="ini">+</span>`; };
   body();
   $("#rw-kind").onclick = e => { const b = e.target.closest("[data-rk]"); if (!b) return; kind = b.dataset.rk; $$("#rw-kind button").forEach(x => x.setAttribute("aria-pressed", x.dataset.rk === kind)); body(); };
   $("#rw-img").onchange = async e => { const f = e.target.files[0]; if (!f) return; $("#rwSave").disabled = true; $("#rwPrev").innerHTML = `<span class="small">กำลังอัปโหลด…</span>`;
     try { img = await store.uploadImage(await compressImage(f)); } catch { toast("อ่านไฟล์รูปไม่ได้ ลองไฟล์ JPG หรือ PNG"); }
     prev(); $("#rwSave").disabled = false; };
-  $("#rwImgDel").onclick = () => { img = {img:null, imgId:null}; prev(); };
+  $("#rwImgDel").onclick = () => { img = {img:null}; prev(); };
   $("#rwForm").onsubmit = async e => { e.preventDefault();
     const nid = id || uid("w"), sv = $("#rw-stock").value.trim();
     const data = {name: $("#rw-name").value.trim(), kind, itemId: kind === "item" ? $("#rw-item")?.value || null : null, value: kind === "discount" ? Number($("#rw-val").value) || 0 : 0,
-      points: Math.max(1, Math.floor(+$("#rw-pts").value || 0)), blurb: $("#rw-blurb").value.trim(), active: $("#rw-active").checked, limited: sv !== "", img: img.img, imgId: img.imgId};
+      points: Math.max(1, Math.floor(+$("#rw-pts").value || 0)), blurb: $("#rw-blurb").value.trim(), active: $("#rw-active").checked, img: img.img, stock: sv === "" ? null : Math.max(0, Math.floor(+sv))};
     if (kind === "item" && !data.itemId) { $("#rwErr").textContent = "เลือกเมนูที่จะให้ฟรีก่อน"; return; }
-    if (!await store.set("rewards", nid, data)) return;
-    if (sv !== "" && Number(sv) !== stockOf("rw-" + nid)) await store.set("stock", "rw-" + nid, {qty: Math.max(0, Math.floor(+sv))});
-    if (r.imgId && r.imgId !== img.imgId && store.assets) store.assets.delete(r.imgId).catch(() => {});
-    closeModal(); toast(id ? "บันทึกของรางวัลแล้ว" : "วางของรางวัลในตู้แล้ว"); };
+    if (await store.call("PUT", "/api/rewards/" + nid, data)) { closeModal(); toast(id ? "บันทึกของรางวัลแล้ว" : "วางของรางวัลในตู้แล้ว"); } };
   $("#rwDel") && ($("#rwDel").onclick = () => { $("#delBox").innerHTML = `<div class="notice" style="margin:0;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap">เอา “${esc(r.name)}” ออกจากตู้ถาวร? ประวัติการแลกยังอยู่ <button type="button" class="btn sm danger" id="delYes">ยืนยันลบ</button></div>`;
-    $("#delYes").onclick = async () => { if (await store.del("rewards", id)) { if (r.limited) await store.del("stock", "rw-" + id); closeModal(); toast("ลบของรางวัลแล้ว"); } }; });
+    $("#delYes").onclick = async () => { if (await store.call("DELETE", "/api/rewards/" + id)) { closeModal(); toast("ลบของรางวัลแล้ว"); } }; });
 }
 
 /* ---------- menu CRUD ---------- */
@@ -1235,8 +1147,8 @@ async function compressImage(file){
 }
 function openItem(id){
   const m = S.menu.find(x => x.id === id) || {cat:"bread", price:"", active:true, trackStock:true, opts:[]};
-  let img = {img: m.img || null, imgId: m.imgId || null}, opts = (m.opts || []).map(o => ({...o}));
-  const prevSrc = () => img.imgId ? "/_blob/" + img.imgId : img.img;
+  let img = {img: m.img || null}, opts = (m.opts || []).map(o => ({...o}));
+  const prevSrc = () => img.img;
   modal(`<div class="mh"><h2>${id ? "แก้ไขเมนู" : "เพิ่มเมนูใหม่"}</h2><button class="x" data-close aria-label="ปิด">×</button></div>
     <form id="itemForm" class="form">
       <div class="imgpick"><div class="ph" id="imgPrev">${prevSrc() ? `<img src="${esc(prevSrc())}" alt="">` : `<span class="ini">+</span>`}</div>
@@ -1265,18 +1177,17 @@ function openItem(id){
     try { const blob = await compressImage(f); img = await store.uploadImage(blob); $("#imgPrev").innerHTML = `<img src="${esc(prevSrc())}" alt="">`; }
     catch { toast("อ่านไฟล์รูปไม่ได้ ลองไฟล์ JPG หรือ PNG"); $("#imgPrev").innerHTML = `<span class="ini">+</span>`; }
     $("#itemSave").disabled = false; };
-  $("#imgDel").onclick = () => { img = {img:null, imgId:null}; $("#imgPrev").innerHTML = `<span class="ini">+</span>`; };
+  $("#imgDel").onclick = () => { img = {img:null}; $("#imgPrev").innerHTML = `<span class="ini">+</span>`; };
   $("#itemForm").onsubmit = async e => { e.preventDefault();
-    const nid = id || uid("m"), track = $("#f-track").checked;
+    const nid = id || uid("m"), track = $("#f-track").checked, sv = $("#f-stock").value;
     const data = {name: $("#f-name").value.trim(), cat: $("#f-cat").value, price: Number($("#f-price").value) || 0, active: $("#f-active").checked,
-      trackStock: track, sweet: $("#f-sweet").checked, opts: opts.filter(o => o.name.trim()).map(o => ({name:o.name.trim(), add:o.add||0})), img: img.img, imgId: img.imgId, order: m.order || 0};
+      trackStock: track, sweet: $("#f-sweet").checked, opts: opts.filter(o => o.name.trim()).map(o => ({name:o.name.trim(), add:o.add||0})), img: img.img, order: m.order || 0,
+      // send stock only when it was changed here, so sales made meanwhile are not overwritten
+      stock: track && sv !== "" && Number(sv) !== stockOf(nid) ? Math.max(0, Math.floor(+sv)) : null};
     if (!data.name) return;
-    if (!await store.set("menu", nid, data)) return;
-    if (track) { const v = $("#f-stock").value; if (v !== "" && Number(v) !== stockOf(nid)) await store.set("stock", nid, {qty: Math.max(0, Math.floor(+v))}); else if (stockOf(nid) == null) await store.set("stock", nid, {qty: 0}); }
-    if (m.imgId && m.imgId !== img.imgId && store.assets) store.assets.delete(m.imgId).catch(() => {});
-    closeModal(); toast(id ? "บันทึกเมนูแล้ว" : "เพิ่มเมนูแล้ว"); };
+    if (await store.call("PUT", "/api/menu/" + nid, data)) { closeModal(); toast(id ? "บันทึกเมนูแล้ว" : "เพิ่มเมนูแล้ว"); } };
   $("#itemDel") && ($("#itemDel").onclick = () => { $("#delBox").innerHTML = `<div class="notice" style="margin:0;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap">ลบ “${esc(m.name)}” ถาวร? ประวัติการขายยังอยู่ <button type="button" class="btn sm danger" id="delYes">ยืนยันลบ</button></div>`;
-    $("#delYes").onclick = async () => { if (await store.del("menu", id)) { await store.del("stock", id); if (m.imgId && store.assets) store.assets.delete(m.imgId).catch(() => {}); S.cart = S.cart.filter(l => l.id !== id); closeModal(); toast("ลบเมนูแล้ว"); } }; });
+    $("#delYes").onclick = async () => { if (await store.call("DELETE", "/api/menu/" + id)) { S.cart = S.cart.filter(l => l.id !== id); closeModal(); toast("ลบเมนูแล้ว"); } }; });
 }
 
 /* ---------- promotions CRUD ---------- */
@@ -1335,9 +1246,9 @@ function openPromo(id){
       value: Number(val("p-val")) || 0, buy: Number(val("p-buy")) || p.buy || 2, get: Number(val("p-get")) || p.get || 1, min: Number(val("p-min")) || 0, unit: val("p-unit") || "baht",
       days, start: val("p-start") || null, end: val("p-end") || null, from: val("p-from") || null, to: val("p-to") || null, code: val("p-code").trim().toUpperCase() || null, active: $("#p-active").checked};
     if ((data.start && !data.end) || (!data.start && data.end)) { toast("ใส่เวลาเริ่มและเวลาสิ้นสุดให้ครบ"); return; }
-    if (await store.set("promos", id || uid("p"), data)) { closeModal(); toast("บันทึกโปรโมชั่นแล้ว"); } };
+    if (await store.call("PUT", "/api/promos/" + (id || uid("p")), data)) { closeModal(); toast("บันทึกโปรโมชั่นแล้ว"); } };
   $("#promoDel") && ($("#promoDel").onclick = () => { $("#delBox").innerHTML = `<div class="notice" style="margin:0;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap">ลบโปร “${esc(p.name)}”? <button type="button" class="btn sm danger" id="delYes">ยืนยันลบ</button></div>`;
-    $("#delYes").onclick = async () => { if (await store.del("promos", id)) { closeModal(); toast("ลบโปรแล้ว"); } }; });
+    $("#delYes").onclick = async () => { if (await store.call("DELETE", "/api/promos/" + id)) { closeModal(); toast("ลบโปรแล้ว"); } }; });
 }
 
 /* ---------- reports ---------- */
@@ -1351,13 +1262,11 @@ function rangeFor(r){
 }
 async function loadReport(){
   const [a, b] = rangeFor(S.rep.range); S.rep.from = a; S.rep.to = b;
-  const keys = []; for (let d = fromKey(a); dayKey(d) <= b && keys.length < 93; d.setDate(d.getDate() + 1)) keys.push(dayKey(d));
+  const keys = []; for (let d = fromKey(a); dayKey(d) <= b && keys.length < 366; d.setDate(d.getDate() + 1)) keys.push(dayKey(d));
   S.rep.loading = true; S.rep.orders = null; render();
-  try {
-    const out = []; for (let i = 0; i < keys.length; i += 4) { const part = await Promise.all(keys.slice(i, i + 4).map(k => store.getDay(k))); part.forEach(p => out.push(...p)); }
-    S.rep.orders = out; S.rep.keys = keys;
-  } catch (e) { S.rep.orders = []; S.rep.keys = keys; toast("โหลดรายงานไม่ครบ (" + (e?.code || "error") + ")"); }
-  S.rep.loading = false; render();
+  try { S.rep.orders = await store.getRange(a, keys[keys.length - 1] || a); }
+  catch (e) { S.rep.orders = []; toast(e.message); }
+  S.rep.keys = keys; S.rep.loading = false; render();
 }
 function summarize(orders, keys){
   const ok = orders.filter(o => o.status !== "void"), voids = orders.filter(o => o.status === "void");
@@ -1389,7 +1298,7 @@ function viewReport(){
   const max = Math.max(...X.buckets.map(b => b.v), 1);
   const items = Object.entries(X.byItem).sort((a,b) => b[1].q - a[1].q).slice(0, 10), im = items[0]?.[1].q || 1;
   return head("รายงานยอดขาย", `<button class="btn primary" data-reppdf ${store.downloads ? "" : "disabled"}>ดาวน์โหลด PDF</button><button class="btn" data-repcsv ${store.downloads ? "" : "disabled"}>CSV</button>`) + `<section>
-    <div style="display:grid;gap:6px;margin-bottom:16px">${ctrl}<span class="small muted">${rangeLabel()}${R.keys.length >= 93 ? " (แสดงสูงสุด 93 วัน)" : ""}</span></div>
+    <div style="display:grid;gap:6px;margin-bottom:16px">${ctrl}<span class="small muted">${rangeLabel()}${R.keys.length >= 366 ? " (แสดงสูงสุด 366 วัน)" : ""}</span></div>
     <div class="kpis">
       <div class="card kpi"><div class="label">ยอดขายสุทธิ</div><div class="v">${baht(X.sales)}</div><div class="s">ก่อนส่วนลด ${baht(X.gross)}</div></div>
       <div class="card kpi"><div class="label">จำนวนบิล</div><div class="v">${X.ok.length}</div><div class="s">ทานที่ร้าน ${X.byType.dine} · กลับบ้าน ${X.byType.take}${X.voids.length ? ` · ยกเลิก ${X.voids.length}` : ""}</div></div>
@@ -1488,11 +1397,13 @@ function openStaff(id){
     const pin = $("#st-pin").value, role = $("#st-role").value, active = $("#st-active").checked;
     const mgrs = S.staff.filter(x => x.role === "manager" && x.active !== false && x.id !== id);
     if (!mgrs.length && (role !== "manager" || !active)) { $("#stErr").textContent = "ร้านต้องมีผู้จัดการที่เปิดใช้งานอย่างน้อย 1 คน"; return; }
-    const data = {name: $("#st-name").value.trim(), role, active, pinHash: s.pinHash, salt: s.salt};
-    if (pin) { if (!/^\d{4}$/.test(pin)) { $("#stErr").textContent = "PIN ต้องเป็นตัวเลข 4 หลัก"; return; } data.salt = uid("s"); data.pinHash = await sha(data.salt + ":" + pin); }
-    if (await store.set("staff", id || uid("u"), data)) { closeModal(); toast("บันทึกพนักงานแล้ว"); } };
+    if (pin && !/^\d{4}$/.test(pin)) { $("#stErr").textContent = "PIN ต้องเป็นตัวเลข 4 หลัก"; return; }
+    try { await api.req("PUT", "/api/staff/" + (id || uid("u")), {name: $("#st-name").value.trim(), role, active, ...(pin ? {pin} : {})}); store.soon(); closeModal(); toast("บันทึกพนักงานแล้ว"); }
+    catch (err) { $("#stErr").textContent = err.message; } };
   $("#staffDel") && ($("#staffDel").onclick = () => { $("#delBox").innerHTML = `<div class="notice" style="margin:0;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap">ลบ ${esc(s.name)}? ประวัติการขายยังอยู่ <button type="button" class="btn sm danger" id="delYes">ยืนยันลบ</button></div>`;
-    $("#delYes").onclick = async () => { if (s.role === "manager" && !S.staff.some(x => x.role === "manager" && x.active !== false && x.id !== id)) { $("#stErr").textContent = "ลบผู้จัดการคนสุดท้ายไม่ได้"; return; } if (await store.del("staff", id)) { closeModal(); toast("ลบพนักงานแล้ว"); } }; });
+    $("#delYes").onclick = async () => {
+      try { await api.req("DELETE", "/api/staff/" + id); store.soon(); closeModal(); toast("ลบพนักงานแล้ว"); }
+      catch (err) { $("#stErr").textContent = err.message; } }; });
 }
 
 /* ================= modal / toast ================= */
@@ -1528,7 +1439,7 @@ document.addEventListener("click", async e => {
   if ("pindel" in d) { pinBuf = pinBuf.slice(0, -1); return drawDots(); }
   if ("pinback" in d) { pinFor = null; return render(); }
   if ("lock" in d) return lock();
-  if (d.nav) { S.view = d.nav; ss.set("crumb-view", d.nav); if (d.nav === "report") S.rep.orders = null; window.scrollTo(0, 0); return render(); }
+  if (d.nav) { clearDraft(); S.view = d.nav; ss.set("crumb-view", d.nav); if (d.nav === "report") S.rep.orders = null; window.scrollTo(0, 0); return render(); }
   if (d.cat) { S.cat = d.cat; return render(); }
   if (d.add) { const m = S.menu.find(x => x.id === d.add); if (!m) return; return (m.opts?.length || m.sweet) ? openOptions(m) : addToCart(m); }
   if (d.inc) { const l = S.cart.find(x => x.key === d.inc), m = S.menu.find(x => x.id === l?.id);
@@ -1555,13 +1466,13 @@ document.addEventListener("click", async e => {
   if (d.cash) { $("#cashIn").value = d.cash; return updateChange(); }
   if (b.id === "confirmPay") return confirmPay();
   if ("goshop" in d) { closeModal(); S.view = "shop"; return render(); }
-  if (d.st) return store.update(store.dayColl(dayKey(Date.now())), d.st, {status: d.to, [d.to + "At"]: Date.now()});
+  if (d.st) return store.call("PATCH", `/api/orders/${d.st}/status`, {status: d.to});
   if (d.rcpt) { const o = S.today.find(x => x.id === d.rcpt); if (o) showReceipt(o); return; }
   if (d.void) { const o = S.today.find(x => x.id === d.void); if (o) openVoid(o); return; }
   if (d.memedit !== undefined) return openMember(d.memedit || null);
   if (d.itemedit !== undefined) return openItem(d.itemedit || null);
   if (d.restock) { const n = Math.floor(+document.getElementById("rs-" + d.restock).value || 0), m = S.menu.find(x => x.id === d.restock);
-    if (n > 0 && await store.set("stock", d.restock, {qty: (stockOf(d.restock) || 0) + n})) toast(`เติม ${m?.name} +${n}`); return; }
+    if (n > 0 && await store.call("POST", `/api/stock/${d.restock}/add`, {qty: n})) toast(`เติม ${m?.name} +${n}`); return; }
   if (d.promoedit !== undefined) return openPromo(d.promoedit || null);
   if (d.staffedit !== undefined) return openStaff(d.staffedit || null);
   if (d.range) { S.rep.range = d.range; if (d.range !== "custom") loadReport(); else render(); return; }
@@ -1571,9 +1482,8 @@ document.addEventListener("click", async e => {
 });
 document.addEventListener("change", async e => {
   const t = e.target;
-  if (t.dataset.toggleitem) { const m = S.menu.find(x => x.id === t.dataset.toggleitem); if (m) await store.update("menu", m.id, {active: t.checked}); }
-  else if (t.dataset.togglepromo) await store.update("promos", t.dataset.togglepromo, {active: t.checked});
-  else if (t.id === "usePts") { S.usePoints = t.checked; render(); }
+  if (t.dataset.toggleitem) { const m = S.menu.find(x => x.id === t.dataset.toggleitem); if (m) await store.call("PUT", "/api/menu/" + m.id, {...m, active: t.checked, stock: null}); }
+  else if (t.dataset.togglepromo) await store.call("PATCH", `/api/promos/${t.dataset.togglepromo}/active`, {active: t.checked});
 });
 document.addEventListener("input", e => {
   const t = e.target;
@@ -1587,15 +1497,15 @@ document.addEventListener("submit", async e => {
     const n = $("#su-name").value.trim(), p = $("#su-pin").value, p2 = $("#su-pin2").value;
     if (!/^\d{4}$/.test(p)) { $("#suErr").textContent = "PIN ต้องเป็นตัวเลข 4 หลัก"; return; }
     if (p !== p2) { $("#suErr").textContent = "PIN สองช่องไม่ตรงกัน"; return; }
-    const salt = uid("s"), id = uid("u"), data = {name: n, role: "manager", active: true, salt, pinHash: await sha(salt + ":" + p)};
-    if (await store.set("staff", id, data)) { S.staffMe = {id, ...data}; ss.set("crumb-staff", id); render(); }
+    try { const r = await api.req("POST", "/api/auth/setup", {name: n, pin: p}); api.setToken(r.token); S.staffMe = r.staff; clearDraft(); await store.refresh(); }
+    catch (err) { $("#suErr").textContent = err.message; }
   }
   if (e.target.id === "shopForm") { e.preventDefault(); const v = id => document.getElementById(id).value.trim();
     const pp = v("s-pp").replace(/\D/g, "");
     if (pp && !promptPayPayload(pp, 1)) { toast("หมายเลขพร้อมเพย์ต้องเป็นเบอร์มือถือ 10 หลัก หรือเลข 13/15 หลัก"); return; }
     const data = {name: v("s-name") || "ร้านของฉัน", tagline: v("s-tag"), branch: v("s-branch"), phone: v("s-phone"), address: v("s-addr"), taxId: v("s-tax"), vat: v("s-vat"), promptpay: pp, footer: v("s-foot"),
       pointsPer: Math.max(1, +v("s-pper") || 25)};
-    if (await store.set("config", "shop", data)) toast("บันทึกข้อมูลร้านแล้ว"); }
+    if (await store.call("PUT", "/api/config/shop", data)) { clearDraft(); toast("บันทึกข้อมูลร้านแล้ว"); } }
 });
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && $("#modalRoot").innerHTML) closeModal();
@@ -1604,7 +1514,7 @@ document.addEventListener("keydown", e => {
 });
 
 render();
-store.init().then(render);
+store.init();
 })();
 </script>
 

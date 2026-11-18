@@ -1,7 +1,7 @@
 // Generates 640x480 JPEG menu illustrations for Butter Bunny bakery.
 const {chromium} = require('playwright');
 const path = require('path');
-const out = path.join(__dirname, '..', '..', 'assets', 'illustrations');
+const out = path.join(__dirname, '..', '..', 'public', 'assets', 'illustrations');
 
 const BG = {bread:['#FCEBC8','#F6D99E'], cake:['#FBE0E3','#F4C3CB'], coffee:['#F3E3D6','#E6C9B3'], drink:['#DDEDF5','#BBDDEC'], juice:['#FFE8CF','#FFD0A1'], matcha:['#E3F0DA','#C8E2B8']};
 const wrap = (bg, body, shadow = true) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" width="640" height="480">

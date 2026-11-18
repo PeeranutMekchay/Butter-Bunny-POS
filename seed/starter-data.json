@@ -18,7 +18,7 @@
       "price": 60,
       "sweet": false,
       "trackStock": false,
-      "imgFile": "assets/illustrations/m-americano.jpg"
+      "imgFile": "/assets/illustrations/m-americano.jpg"
     },
     "m-bagel": {
       "active": true,
@@ -29,7 +29,7 @@
       "price": 85,
       "sweet": false,
       "trackStock": true,
-      "imgFile": "assets/illustrations/m-bagel.jpg"
+      "imgFile": "/assets/illustrations/m-bagel.jpg"
     },
     "m-basque": {
       "active": true,
@@ -40,7 +40,7 @@
       "price": 125,
       "sweet": false,
       "trackStock": true,
-      "imgFile": "assets/illustrations/m-basque.jpg"
+      "imgFile": "/assets/illustrations/m-basque.jpg"
     },
     "m-brownie": {
       "active": true,
@@ -51,7 +51,7 @@
       "price": 59,
       "sweet": false,
       "trackStock": true,
-      "imgFile": "assets/illustrations/m-brownie.jpg"
+      "imgFile": "/assets/illustrations/m-brownie.jpg"
     },
     "m-cappuccino": {
       "active": true,
@@ -71,7 +71,7 @@
       "price": 70,
       "sweet": true,
       "trackStock": false,
-      "imgFile": "assets/illustrations/m-cappuccino.jpg"
+      "imgFile": "/assets/illustrations/m-cappuccino.jpg"
     },
     "m-caramel": {
       "active": true,
@@ -95,7 +95,7 @@
       "price": 85,
       "sweet": true,
       "trackStock": false,
-      "imgFile": "assets/illustrations/m-caramel.jpg"
+      "imgFile": "/assets/illustrations/m-caramel.jpg"
     },
     "m-chiffon": {
       "active": true,
@@ -106,7 +106,7 @@
       "price": 65,
       "sweet": false,
       "trackStock": true,
-      "imgFile": "assets/illustrations/m-chiffon.jpg"
+      "imgFile": "/assets/illustrations/m-chiffon.jpg"
     },
     "m-chococake": {
       "active": true,
@@ -117,7 +117,7 @@
       "price": 95,
       "sweet": false,
       "trackStock": true,
-      "imgFile": "assets/illustrations/m-chococake.jpg"
+      "imgFile": "/assets/illustrations/m-chococake.jpg"
     },
     "m-cinnamon": {
       "active": true,
@@ -128,7 +128,7 @@
       "price": 70,
       "sweet": false,
       "trackStock": true,
-      "imgFile": "assets/illustrations/m-cinnamon.jpg"
+      "imgFile": "/assets/illustrations/m-cinnamon.jpg"
     },
     "m-cocoa": {
       "active": true,
@@ -152,7 +152,7 @@
       "price": 65,
       "sweet": true,
       "trackStock": false,
-      "imgFile": "assets/illustrations/m-cocoa.jpg"
+      "imgFile": "/assets/illustrations/m-cocoa.jpg"
     },
     "m-cookie": {
       "active": true,
@@ -163,7 +163,7 @@
       "price": 39,
       "sweet": false,
       "trackStock": true,
-      "imgFile": "assets/illustrations/m-cookie.jpg"
+      "imgFile": "/assets/illustrations/m-cookie.jpg"
     },
     "m-croissant": {
       "active": true,
@@ -174,7 +174,7 @@
       "price": 65,
       "sweet": false,
       "trackStock": true,
-      "imgFile": "assets/illustrations/m-croissant.jpg"
+      "imgFile": "/assets/illustrations/m-croissant.jpg"
     },
     "m-donut": {
       "active": true,
@@ -185,7 +185,7 @@
       "price": 45,
       "sweet": false,
       "trackStock": true,
-      "imgFile": "assets/illustrations/m-donut.jpg"
+      "imgFile": "/assets/illustrations/m-donut.jpg"
     },
     "m-eggtart": {
       "active": true,
@@ -196,7 +196,7 @@
       "price": 45,
       "sweet": false,
       "trackStock": true,
-      "imgFile": "assets/illustrations/m-eggtart.jpg"
+      "imgFile": "/assets/illustrations/m-eggtart.jpg"
     },
     "m-espresso": {
       "active": true,
@@ -216,7 +216,7 @@
       "price": 55,
       "sweet": false,
       "trackStock": false,
-      "imgFile": "assets/illustrations/m-espresso.jpg"
+      "imgFile": "/assets/illustrations/m-espresso.jpg"
     },
     "m-hamcheese": {
       "active": true,
@@ -227,7 +227,7 @@
       "price": 95,
       "sweet": false,
       "trackStock": true,
-      "imgFile": "assets/illustrations/m-hamcheese.jpg"
+      "imgFile": "/assets/illustrations/m-hamcheese.jpg"
     },
     "m-latte": {
       "active": true,
@@ -251,7 +251,7 @@
       "price": 70,
       "sweet": true,
       "trackStock": false,
-      "imgFile": "assets/illustrations/m-latte.jpg"
+      "imgFile": "/assets/illustrations/m-latte.jpg"
     },
     "m-lemontea": {
       "active": true,
@@ -271,7 +271,7 @@
       "price": 50,
       "sweet": true,
       "trackStock": false,
-      "imgFile": "assets/illustrations/m-lemontea.jpg"
+      "imgFile": "/assets/illustrations/m-lemontea.jpg"
     },
     "m-macaron": {
       "active": true,
@@ -282,7 +282,7 @@
       "price": 120,
       "sweet": false,
       "trackStock": true,
-      "imgFile": "assets/illustrations/m-macaron.jpg"
+      "imgFile": "/assets/illustrations/m-macaron.jpg"
     },
     "m-matcha": {
       "active": true,
@@ -306,7 +306,7 @@
       "price": 85,
       "sweet": true,
       "trackStock": false,
-      "imgFile": "assets/illustrations/m-matcha.jpg"
+      "imgFile": "/assets/illustrations/m-matcha.jpg"
     },
     "m-mexicanbun": {
       "active": true,
@@ -317,7 +317,7 @@
       "price": 55,
       "sweet": false,
       "trackStock": true,
-      "imgFile": "assets/illustrations/m-mexicanbun.jpg"
+      "imgFile": "/assets/illustrations/m-mexicanbun.jpg"
     },
     "m-mocha": {
       "active": true,
@@ -341,7 +341,7 @@
       "price": 80,
       "sweet": true,
       "trackStock": false,
-      "imgFile": "assets/illustrations/m-mocha.jpg"
+      "imgFile": "/assets/illustrations/m-mocha.jpg"
     },
     "m-orange": {
       "active": true,
@@ -352,7 +352,7 @@
       "price": 60,
       "sweet": false,
       "trackStock": true,
-      "imgFile": "assets/illustrations/m-orange.jpg"
+      "imgFile": "/assets/illustrations/m-orange.jpg"
     },
     "m-painchoc": {
       "active": true,
@@ -363,7 +363,7 @@
       "price": 75,
       "sweet": false,
       "trackStock": true,
-      "imgFile": "assets/illustrations/m-painchoc.jpg"
+      "imgFile": "/assets/illustrations/m-painchoc.jpg"
     },
     "m-pandantoast": {
       "active": true,
@@ -374,7 +374,7 @@
       "price": 49,
       "sweet": false,
       "trackStock": true,
-      "imgFile": "assets/illustrations/m-pandantoast.jpg"
+      "imgFile": "/assets/illustrations/m-pandantoast.jpg"
     },
     "m-pinkmilk": {
       "active": true,
@@ -394,7 +394,7 @@
       "price": 50,
       "sweet": true,
       "trackStock": false,
-      "imgFile": "assets/illustrations/m-pinkmilk.jpg"
+      "imgFile": "/assets/illustrations/m-pinkmilk.jpg"
     },
     "m-strawshort": {
       "active": true,
@@ -405,7 +405,7 @@
       "price": 135,
       "sweet": false,
       "trackStock": true,
-      "imgFile": "assets/illustrations/m-strawshort.jpg"
+      "imgFile": "/assets/illustrations/m-strawshort.jpg"
     },
     "m-strawsmoothie": {
       "active": true,
@@ -416,7 +416,7 @@
       "price": 79,
       "sweet": true,
       "trackStock": false,
-      "imgFile": "assets/illustrations/m-strawsmoothie.jpg"
+      "imgFile": "/assets/illustrations/m-strawsmoothie.jpg"
     },
     "m-thaitea": {
       "active": true,
@@ -436,7 +436,7 @@
       "price": 55,
       "sweet": true,
       "trackStock": false,
-      "imgFile": "assets/illustrations/m-thaitea.jpg"
+      "imgFile": "/assets/illustrations/m-thaitea.jpg"
     },
     "m-wholewheat": {
       "active": true,
@@ -447,7 +447,7 @@
       "price": 89,
       "sweet": false,
       "trackStock": true,
-      "imgFile": "assets/illustrations/m-wholewheat.jpg"
+      "imgFile": "/assets/illustrations/m-wholewheat.jpg"
     },
     "m-yuzu": {
       "active": true,
@@ -458,7 +458,7 @@
       "price": 115,
       "sweet": false,
       "trackStock": true,
-      "imgFile": "assets/illustrations/m-yuzu.jpg"
+      "imgFile": "/assets/illustrations/m-yuzu.jpg"
     },
     "m-yuzusoda": {
       "active": true,
@@ -469,7 +469,7 @@
       "price": 65,
       "sweet": true,
       "trackStock": false,
-      "imgFile": "assets/illustrations/m-yuzusoda.jpg"
+      "imgFile": "/assets/illustrations/m-yuzusoda.jpg"
     }
   },
   "stock": {
@@ -686,7 +686,7 @@
       "name": "สติกเกอร์กระต่ายเนย",
       "points": 20,
       "value": 0,
-      "imgFile": "assets/illustrations/g-sticker.jpg"
+      "imgFile": "/assets/illustrations/g-sticker.jpg"
     },
     "w-tote": {
       "active": true,
@@ -697,7 +697,7 @@
       "name": "ถุงผ้ากระต่ายเนย",
       "points": 250,
       "value": 0,
-      "imgFile": "assets/illustrations/g-tote.jpg"
+      "imgFile": "/assets/illustrations/g-tote.jpg"
     },
     "w-tumbler": {
       "active": true,
@@ -708,7 +708,7 @@
       "name": "แก้วเก็บความเย็น Butter Bunny",
       "points": 400,
       "value": 0,
-      "imgFile": "assets/illustrations/g-tumbler.jpg"
+      "imgFile": "/assets/illustrations/g-tumbler.jpg"
     }
   },
   "config": {
