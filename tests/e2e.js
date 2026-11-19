@@ -85,11 +85,25 @@ const shots = process.argv[3] || path.join(__dirname, "..", "data");
   await p.click(".modal [data-close]");
 
   // customer queue screen shows the ready order
-  const qp = await ctx.newPage(); await qp.goto(base + "/queue"); await qp.click("#soundOn"); await qp.waitForTimeout(500);
+  const qp = await ctx.newPage();
+  // stand-in Thai voice so the announcement text can be checked in a headless browser
+  await qp.addInitScript(() => {
+    window.__spoken = [];
+    const voice = { name: "Test Thai (Natural)", lang: "th-TH" };
+    Object.defineProperty(window, "speechSynthesis", { value: { getVoices: () => [voice], speak: u => window.__spoken.push(u.text), cancel() {}, onvoiceschanged: null } });
+    window.SpeechSynthesisUtterance = function (t) { this.text = t; };
+  });
+  await qp.goto(base + "/queue"); await qp.waitForTimeout(400);
+  step("queue screen is not covered by an overlay", (await qp.$$(".corner .vpanel:not([hidden])")).length === 0 && (await qp.textContent("#soundChip")).includes("แตะเพื่อเปิดเสียง"));
+  await qp.click("#soundChip", { force: true }); await qp.waitForTimeout(300);
   step("queue screen lists orders", (await qp.textContent("main")).includes("#00"));
   await p.click("[data-nav=orders]"); await p.locator("[data-st]").first().click(); await qp.waitForTimeout(800);
   await qp.screenshot({ path: path.join(shots, "e2e-queue.png") });
   step("queue screen updates live when an order is ready", (await qp.textContent(".ready")).includes("#00"));
+  await qp.waitForTimeout(1500);
+  const spoken = await qp.evaluate(() => window.__spoken);
+  step("ready order is announced in Thai", spoken.some(t => /^ออเดอร์ที่ ศูนย์ ศูนย์ (หนึ่ง|สอง) ทำเสร็จแล้ว เชิญรับได้เลยค่ะ$/.test(t)), spoken[0] || "nothing spoken");
+  await qp.click("#soundChip", { force: true }); await qp.waitForTimeout(200); await qp.screenshot({ path: path.join(shots, "e2e-queue-panel.png") });
 
   // pre-order with deposit, then pickup
   await p.click("[data-nav=pre]"); await p.click('[data-preedit=""]');

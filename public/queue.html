@@ -46,11 +46,26 @@ footer{display:flex;justify-content:space-between;align-items:center;color:var(-
 footer button{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:.8vh 1.6vw;cursor:pointer}
 .dot{display:inline-block;width:1.2vh;height:1.2vh;border-radius:50%;background:var(--accent);margin-right:.6vw;vertical-align:middle}
 .dot.off{background:var(--muted)}
-#sound{position:fixed;inset:0;display:grid;place-items:center;background:rgb(40 20 30/.35);z-index:5}
-#sound button{font:inherit;font-family:var(--ff-brand);font-size:3.4vh;border:0;border-radius:3vh;padding:3vh 4vw;background:var(--surface);color:var(--brand-ink);box-shadow:0 20px 50px rgb(0 0 0/.25);cursor:pointer}
+/* sound controls live in a small corner; the board itself is never covered */
+.corner{position:fixed;right:max(2vw,env(safe-area-inset-right,0px));bottom:calc(2vh + env(safe-area-inset-bottom,0px));z-index:5;display:flex;flex-direction:column;align-items:flex-end;gap:1vh}
+.chips{display:flex;gap:.8vw}
+.chip{font:inherit;font-size:max(13px,1.9vh);display:inline-flex;align-items:center;gap:.5em;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:.9vh 1.4vw;cursor:pointer;box-shadow:0 6px 18px rgb(150 60 90/.12)}
+.chip svg{width:1.2em;height:1.2em}
+.chip.need{background:var(--accent);color:var(--on-accent);border-color:var(--accent);animation:nudge 2.4s ease-in-out infinite}
+.vpanel{width:min(400px,92vw);background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 18px;box-shadow:0 18px 50px rgb(150 60 90/.18);display:grid;gap:12px;font-size:15px}
+.vpanel h3{margin:0;font-family:var(--ff-brand);font-weight:400;font-size:20px;color:var(--brand-ink)}
+.vpanel label{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.vpanel select,.vpanel input[type=range]{width:100%;font:inherit;color:var(--fg);accent-color:var(--accent)}
+.vpanel select{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:8px 10px}
+.vpanel .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.vpanel .row button{font:inherit;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:10px;padding:8px 12px;cursor:pointer}
+.vpanel .row button.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.vpanel .row button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.vpanel .hint{font-size:12px;color:var(--muted);margin:0;line-height:1.5}
+@keyframes nudge{0%,100%{transform:none}50%{transform:translateY(-3px)}}
 @keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1)}}
 @keyframes glow{50%{box-shadow:0 0 0 1.4vh var(--accent-soft)}}
-@media (prefers-reduced-motion:reduce){.ready .n.new{animation:none}}
+@media (prefers-reduced-motion:reduce){.ready .n.new,.chip.need{animation:none}}
 @media (max-width:700px),(orientation:portrait){
   body{overflow:auto} main{grid-template-columns:1fr} .ready{order:-1}
   .ready .n{font-size:7vh} .brand{font-size:4vh} .clock{font-size:3.6vh}
@@ -68,10 +83,19 @@ footer button{font:inherit;border:1px solid var(--line);background:var(--surface
     <section class="col prep"><h2><i></i>กำลังเตรียม</h2><div class="list" id="prep"></div></section>
     <section class="col ready"><h2><i></i>พร้อมรับแล้ว</h2><div class="list" id="ready"></div></section>
   </main>
-  <footer><span><span class="dot" id="live"></span><span id="liveText">กำลังเชื่อมต่อ…</span></span>
-    <span><button id="soundBtn">เปิดเสียงเรียกคิว</button> <button id="fs">เต็มจอ</button></span></footer>
+  <footer><span><span class="dot" id="live"></span><span id="liveText">กำลังเชื่อมต่อ…</span></span><span></span></footer>
 </div>
-<div id="sound"><button id="soundOn">แตะเพื่อเปิดเสียงเรียกคิว</button></div>
+<div class="corner">
+  <div class="vpanel" id="vpanel" hidden>
+    <h3>เสียงเรียกคิว</h3>
+    <label>เสียงพูด<select id="voiceSel"></select></label>
+    <label>ความเร็ว <span id="rateVal"></span><input type="range" id="rate" min="0.7" max="1.3" step="0.05"></label>
+    <div class="row"><span style="font-size:13px;color:var(--muted)">พูดซ้ำ</span><button data-rep="1">1 รอบ</button><button data-rep="2">2 รอบ</button></div>
+    <p class="hint" id="voiceHint"></p>
+    <div class="row"><button class="primary" id="testVoice">ทดสอบเสียง</button><button id="muteBtn">ปิดเสียง</button><button id="closePanel">ปิด</button></div>
+  </div>
+  <div class="chips"><button class="chip need" id="soundChip"></button><button class="chip" id="fs">เต็มจอ</button></div>
+</div>
 <script>
 (() => {
 const $ = s => document.querySelector(s);
@@ -79,8 +103,21 @@ const pad = n => "#" + String(n).padStart(3, "0");
 fetch("/assets/logo.svg").then(r => r.text()).then(t => $("#logo").innerHTML = t).catch(() => {});
 
 let audio = null, seen = null, newest = new Set(), today = "";
+const SPK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>';
+const SET = (() => { try { return {rate: 1, repeat: 2, voice: "", muted: false, ...JSON.parse(localStorage.getItem("bb-queue-voice") || "{}")}; } catch { return {rate: 1, repeat: 2, voice: "", muted: false}; } })();
+const saveSet = () => { try { localStorage.setItem("bb-queue-voice", JSON.stringify(SET)); } catch {} };
+const hasTTS = "speechSynthesis" in window;
+// natural-sounding Thai voices first: Edge "Premwadee/Niwat (Natural)", Apple "Narisa/Kanya", then Google, then any Thai voice
+const RANK = [/premwadee/i, /narisa/i, /natural/i, /kanya/i, /online/i, /google/i, /achara/i, /pattara/i];
+const thVoices = () => hasTTS ? speechSynthesis.getVoices().filter(v => (v.lang || "").toLowerCase().replace("_", "-").startsWith("th")) : [];
+const score = v => { const i = RANK.findIndex(r => r.test(v.name)); return i < 0 ? 99 : i; };
+const pickVoice = () => { const vs = thVoices(); return vs.find(v => v.name === SET.voice) || vs.sort((a, b) => score(a) - score(b))[0] || null; };
+const DIG = ["ศูนย์", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า"];
+const spellQ = n => String(n).padStart(3, "0").split("").map(d => DIG[d]).join(" ");
+const phrase = n => `ออเดอร์ที่ ${spellQ(n)} ทำเสร็จแล้ว เชิญรับได้เลยค่ะ`;
+
 function chime(){
-  if (!audio) return;
+  if (!audio || SET.muted) return;
   const t = audio.currentTime;
   [[880, 0], [1320, .18]].forEach(([f, d]) => {
     const o = audio.createOscillator(), g = audio.createGain();
@@ -89,21 +126,46 @@ function chime(){
     o.start(t + d); o.stop(t + d + 1);
   });
 }
-function say(nums){
-  try {
-    const v = speechSynthesis.getVoices().find(x => x.lang && x.lang.toLowerCase().startsWith("th"));
-    if (!v || !audio) return;
-    const u = new SpeechSynthesisUtterance("เชิญคิวที่ " + nums.join(" และ ") + " ค่ะ"); u.voice = v; u.lang = v.lang; u.rate = .95;
-    setTimeout(() => speechSynthesis.speak(u), 900);
-  } catch {}
+function speak(text){
+  const v = pickVoice(); if (!v) return;
+  const u = new SpeechSynthesisUtterance(text); u.voice = v; u.lang = v.lang; u.rate = SET.rate; u.pitch = 1.05;
+  speechSynthesis.speak(u);
+}
+function announce(nums){
+  if (!audio || SET.muted || !hasTTS || !pickVoice()) return;
+  setTimeout(() => { for (let r = 0; r < SET.repeat; r++) nums.forEach(n => speak(phrase(n))); }, 900);
+}
+function paintChip(){
+  const c = $("#soundChip");
+  if (!audio) { c.className = "chip need"; c.innerHTML = SPK + "แตะเพื่อเปิดเสียงเรียกคิว"; return; }
+  c.className = "chip"; c.innerHTML = SPK + (SET.muted ? "เสียงปิดอยู่" : "เสียงเรียกคิว");
+}
+function fillPanel(){
+  const vs = thVoices(), cur = pickVoice();
+  $("#voiceSel").innerHTML = vs.length ? vs.sort((a, b) => score(a) - score(b)).map(v => `<option value="${v.name.replace(/"/g, "&quot;")}" ${cur && v.name === cur.name ? "selected" : ""}>${v.name}</option>`).join("") : `<option value="">ไม่มีเสียงภาษาไทยในเครื่องนี้</option>`;
+  $("#voiceSel").disabled = !vs.length;
+  $("#rate").value = SET.rate; $("#rateVal").textContent = "x" + Number(SET.rate).toFixed(2);
+  document.querySelectorAll("[data-rep]").forEach(b => b.setAttribute("aria-pressed", +b.dataset.rep === SET.repeat));
+  $("#muteBtn").textContent = SET.muted ? "เปิดเสียง" : "ปิดเสียง";
+  $("#voiceHint").textContent = !hasTTS ? "เบราว์เซอร์นี้พูดไม่ได้ จะมีแค่เสียงกริ๊ง"
+    : !vs.length ? "เครื่องนี้ยังไม่มีเสียงภาษาไทย จะมีแค่เสียงกริ๊ง บน Windows แนะนำให้เปิดหน้านี้ด้วย Microsoft Edge (มีเสียง Premwadee แบบธรรมชาติ) บน iPad/Mac เลือกเสียง Narisa หรือ Kanya ได้"
+    : /premwadee|narisa|natural/i.test(cur?.name || "") ? "ใช้เสียงผู้หญิงภาษาไทยแบบธรรมชาติอยู่"
+    : "ถ้าอยากได้เสียงที่เป็นธรรมชาติกว่านี้ บน Windows ให้เปิดหน้านี้ด้วย Microsoft Edge แล้วเลือก Premwadee (Natural)";
 }
 function enableSound(){
-  try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); chime(); } catch {}
-  $("#sound").hidden = true; $("#soundBtn").textContent = "เสียงเปิดอยู่"; $("#soundBtn").disabled = true;
+  try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); } catch {}
+  SET.muted = false; saveSet(); chime(); paintChip();
 }
-$("#soundOn").onclick = enableSound; $("#soundBtn").onclick = enableSound;
-$("#sound").addEventListener("click", e => { if (e.target.id === "sound") { $("#sound").hidden = true; } });
-$("#fs").onclick = () => document.documentElement.requestFullscreen?.().catch(() => {});
+$("#soundChip").onclick = () => { if (!audio) { enableSound(); return; } const p = $("#vpanel"); p.hidden = !p.hidden; if (!p.hidden) fillPanel(); };
+$("#closePanel").onclick = () => { $("#vpanel").hidden = true; };
+$("#voiceSel").onchange = e => { SET.voice = e.target.value; saveSet(); fillPanel(); };
+$("#rate").oninput = e => { SET.rate = +e.target.value; saveSet(); $("#rateVal").textContent = "x" + SET.rate.toFixed(2); };
+document.querySelectorAll("[data-rep]").forEach(b => b.onclick = () => { SET.repeat = +b.dataset.rep; saveSet(); fillPanel(); });
+$("#muteBtn").onclick = () => { SET.muted = !SET.muted; saveSet(); if (hasTTS) speechSynthesis.cancel(); fillPanel(); paintChip(); };
+$("#testVoice").onclick = () => { if (!audio) enableSound(); if (SET.muted) { SET.muted = false; saveSet(); paintChip(); fillPanel(); } chime(); if (hasTTS && pickVoice()) { speechSynthesis.cancel(); setTimeout(() => speak(phrase(1)), 700); } };
+if (hasTTS) speechSynthesis.onvoiceschanged = () => { if (!$("#vpanel").hidden) fillPanel(); };
+$("#fs").onclick = () => document.fullscreenElement ? document.exitFullscreen?.() : document.documentElement.requestFullscreen?.().catch(() => {});
+paintChip();
 
 const label = q => q.day !== today ? `<small>จากเมื่อวาน</small>` : (q.type === "take" ? `<small>กลับบ้าน</small>` : "");
 function paint(d){
@@ -113,7 +175,7 @@ function paint(d){
   const readyKeys = d.ready.map(key);
   if (seen) {
     const fresh = d.ready.filter(q => !seen.has(key(q)));
-    if (fresh.length) { fresh.forEach(q => newest.add(key(q))); chime(); say(fresh.map(q => q.queue)); setTimeout(() => { fresh.forEach(q => newest.delete(key(q))); }, 20000); }
+    if (fresh.length) { fresh.forEach(q => newest.add(key(q))); chime(); announce(fresh.map(q => q.queue)); setTimeout(() => { fresh.forEach(q => newest.delete(key(q))); }, 20000); }
   }
   seen = new Set(readyKeys);
   $("#prep").innerHTML = d.preparing.length ? d.preparing.map(q => `<span class="n">${pad(q.queue)}</span>`).join("") : `<span class="empty">ยังไม่มีคิวที่กำลังทำ</span>`;
