@@ -935,6 +935,7 @@ async function startAutoQr(total){
 }
 async function paidOk(total, paymentId){
   const b = $("#autoQr"); if (!b) return;
+  $$("#pm-qr p, #pm-qr .linkbtn, .modal .actions").forEach(x => x.hidden = true);
   b.innerHTML = `<div class="paid-ok"><span class="ok"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><b>ชำระเงินสำเร็จ</b><span>ได้รับ ${baht(total, 1)} แล้ว</span></div>`;
   try { const c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator(), g = c.createGain(); o.frequency.value = 1046; o.connect(g); g.connect(c.destination); g.gain.setValueAtTime(.2, c.currentTime); g.gain.exponentialRampToValueAtTime(.001, c.currentTime + .6); o.start(); o.stop(c.currentTime + .6); } catch {}
   await new Promise(r => setTimeout(r, 1300));
