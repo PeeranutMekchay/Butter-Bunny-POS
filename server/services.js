@@ -60,6 +60,7 @@ function checkout(db, body, staff, now = new Date()) {
     if (body.expectTotal != null && Math.abs(Number(body.expectTotal) - P.total) > 0.009)
       throw new HttpError(409, `ยอดบิลเปลี่ยนเป็น ฿${P.total.toFixed(2)} (ราคาหรือโปรโมชั่นอาจเพิ่งถูกแก้) ตรวจบิลแล้วกดชำระอีกครั้ง`);
     const tendered = pay === "cash" ? R.num(body.tendered, "จำนวนเงินที่รับ") : P.total;
+    if (body.paymentId && pay !== "qr") throw bad("รายการชำระเงิน QR ใช้ได้กับการจ่ายแบบพร้อมเพย์เท่านั้น");
     if (tendered < P.total) throw bad("รับเงินมาไม่พอ");
 
     // stock checks: menu items (including free reward items) and limited rewards
@@ -88,6 +89,8 @@ function checkout(db, body, staff, now = new Date()) {
     const ins = db.prepare("INSERT INTO order_items (order_id, line, menu_id, name, cat, unit, qty, opt, sweet, reward_id, pts) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
     lines.forEach((l, i) => ins.run(oid, i + 1, l.id, l.name, l.cat, l.unit, l.qty, l.opt, l.sweet, l.reward, l.pts));
     db.prepare("UPDATE orders SET shift_id = ? WHERE id = ?").run(shift.id, oid);
+    // auto-confirmed QR: the provider must report this exact amount as paid, and it can be used once
+    if (body.paymentId) db.prepare("UPDATE orders SET ref = ? WHERE id = ?").run(require("./payments").claimForOrder(db, String(body.paymentId), P.total, oid), oid);
     const lowStock = [], th = Number(shop.lowStockAt) || 0;
     for (const [mid, q] of Object.entries(needMenu)) {
       const before = R.stockQty(db, mid); if (before == null) continue;

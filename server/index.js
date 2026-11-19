@@ -2,7 +2,7 @@
 const path = require("node:path");
 const os = require("node:os");
 const { openDb } = require("./db");
-const { seedIfEmpty } = require("./seed");
+const { seedIfEmpty, addExtras } = require("./seed");
 const { createApp } = require("./app");
 
 const DATA = process.env.DATA_DIR || path.join(__dirname, "..", "data");
@@ -11,6 +11,7 @@ const HOST = process.env.HOST || "0.0.0.0";
 
 const db = openDb(process.env.DB_FILE || path.join(DATA, "butterbunny.db"));
 if (seedIfEmpty(db)) console.log("โหลดเมนู โปรโมชั่น และของรางวัลเริ่มต้นแล้ว");
+{ const n = addExtras(db); if (n) console.log(`เพิ่มเมนูใหม่ ${n} รายการ (เค้กปอนด์)`); }
 const backupDir = path.join(DATA, "backups");
 const app = createApp({ db, uploadsDir: path.join(DATA, "uploads"), backupDir });
 require("./jobs").startJobs(db, { backupDir, backupHour: Number(process.env.BACKUP_HOUR ?? 3) });

@@ -9,6 +9,7 @@ const S = require("./services");
 const O = require("./ops");
 const N = require("./notify");
 const B = require("./backup");
+const PAY = require("./payments");
 const { HttpError, DAY_RE } = R;
 
 const ROOT = path.join(__dirname, "..");
@@ -75,6 +76,7 @@ function createApp({ db, uploadsDir, backupDir = path.join(uploadsDir, "..", "ba
     const carry = db.prepare("SELECT id FROM orders WHERE day < ? AND day >= ? AND status IN ('preparing','ready')").all(today, R.shiftDays(today, -2)).map(r => R.getOrder(db, r.id));
     return { me: req.staff, shop: R.getShop(db), menu: R.listMenu(db), stock: R.listStock(db), promos: R.listPromos(db), rewards: R.listRewards(db),
       members: R.listMembers(db), staff: R.listStaff(db, { activeOnly: req.staff.role !== "manager" }), shift: O.currentShift(db), preorders: O.listPreorders(db),
+      payment: { provider: PAY.getPay(db).provider },
       today: { day: today, orders: [...carry, ...R.listOrders(db, today, today)], redeems: R.listRedeems(db, today, today) } };
   }));
 
@@ -145,6 +147,13 @@ function createApp({ db, uploadsDir, backupDir = path.join(uploadsDir, "..", "ba
     if (!file || !fs.existsSync(file)) return next(new HttpError(404, "ไม่พบไฟล์สำรองนี้"));
     res.download(file);
   });
+
+  // QR payments confirmed by a provider (Opn Payments) or practice mode
+  api.get("/payment", manager, wrap(() => ({ payment: PAY.publicPay(db) })));
+  api.put("/payment", manager, wrap(req => { const payment = PAY.savePay(db, req.body || {}); broadcast("shop"); return { payment }; }));
+  api.post("/payments/qr", wrapAsync(async req => ({ payment: await PAY.createQr(db, req.body || {}, req.staff) })));
+  api.get("/payments/qr/:id", wrapAsync(async req => ({ payment: await PAY.checkQr(db, req.params.id) })));
+  api.post("/payments/qr/:id/simulate", manager, wrap(req => ({ payment: PAY.simulatePaid(db, req.params.id) })));
 
   // LINE notifications (token is write-only)
   api.get("/line", manager, wrap(() => ({ line: N.publicLine(db) })));

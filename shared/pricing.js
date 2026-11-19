@@ -15,7 +15,7 @@
   const DEFAULT_SHOP = {
     name: "Butter Bunny บัตเตอร์บันนี่", tagline: "เบเกอรี่อบสดทุกเช้า & กาแฟหอมกรุ่น", branch: "", address: "", phone: "", taxId: "",
     promptpay: "", vat: "incl", footer: "ขอบคุณที่แวะมาหาเจ้ากระต่ายเนยนะคะ แล้วมาอีกน้า", pointsPer: 25,
-    dayStartHour: 0, birthdayMultiplier: 2, lowStockAt: 5
+    dayStartHour: 0, birthdayMultiplier: 2, lowStockAt: 5, poundPrice: 250
   };
 
   function promoLive(p, now = new Date()) {

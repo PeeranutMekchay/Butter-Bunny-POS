@@ -207,6 +207,7 @@ function saveShop(db, d) {
   if (d.pointsPer !== undefined) out.pointsPer = num(d.pointsPer, "อัตราแต้ม", {min: 1, max: 10000, int: true});
   if (d.dayStartHour !== undefined) out.dayStartHour = num(d.dayStartHour, "เวลาเริ่มวันใหม่", {min: 0, max: 6, int: true});
   if (d.birthdayMultiplier !== undefined) out.birthdayMultiplier = num(d.birthdayMultiplier, "ตัวคูณแต้มเดือนเกิด", {min: 1, max: 5, int: true});
+  if (d.poundPrice !== undefined) out.poundPrice = num(d.poundPrice, "ราคาเค้กต่อปอนด์", {min: 1, max: 1e5});
   if (d.lowStockAt !== undefined) out.lowStockAt = num(d.lowStockAt, "จำนวนแจ้งเตือนสต็อก", {min: 0, max: 999, int: true});
   db.prepare("INSERT INTO config (key, value) VALUES ('shop', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(JSON.stringify(out));
   return out;

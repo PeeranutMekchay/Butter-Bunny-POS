@@ -444,6 +444,20 @@ body{background-image:radial-gradient(var(--dot) 1.6px,transparent 1.9px);backgr
 .lineguide{font-size:13px;color:var(--muted);margin:0;padding-left:18px;display:grid;gap:4px}
 @media (max-width:520px){.bigcash{font-size:32px}}
 
+/* auto-confirmed QR & pre-order builder */
+.qrimg{width:220px;height:220px;max-width:100%;object-fit:contain;image-rendering:pixelated;background:#fff}
+.qrwait{display:flex;align-items:center;gap:8px;justify-content:center;font-size:14px;color:#1d2b4f}
+.qrwait i{width:10px;height:10px;border-radius:50%;background:#C8456F;animation:pulse 1.4s infinite}
+.demo-badge{background:#FFF3D6;color:#8a5a00;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600}
+.paid-ok{display:grid;justify-items:center;gap:6px;padding:18px 8px;text-align:center}
+.paid-ok .ok{width:92px;height:92px;border-radius:50%;background:var(--accent);display:grid;place-items:center;animation:okpop .5s cubic-bezier(.2,1.6,.4,1)}
+.paid-ok .ok svg{width:52px;height:52px;stroke:var(--on-accent);stroke-width:3.2;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:40;stroke-dashoffset:40;animation:okdraw .45s .25s forwards}
+.paid-ok b{font-family:var(--ff-brand);font-weight:400;font-size:28px;color:var(--brand-ink)}
+@keyframes okpop{from{transform:scale(.3);opacity:0}to{transform:none;opacity:1}}
+@keyframes okdraw{to{stroke-dashoffset:0}}
+.linkbtn{border:0;background:none;color:var(--muted);text-decoration:underline;cursor:pointer;font:inherit;font-size:13px;padding:4px}
+.calc{font-size:13px;color:var(--accent-ink);background:var(--accent-soft);border-radius:10px;padding:8px 12px}
+
 @media (max-width:1100px){.pos{grid-template-columns:minmax(0,1fr) 340px}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:900px){
   .app{grid-template-columns:1fr}
@@ -594,7 +608,7 @@ const store = {
   async refresh(){
     try {
       const d = await api.req("GET", "/api/bootstrap");
-      Object.assign(S, {staffMe: d.me, shop: d.shop, menu: d.menu, stock: d.stock, promos: d.promos, rewards: d.rewards, members: d.members, staff: d.staff, shift: d.shift, preorders: d.preorders,
+      Object.assign(S, {payProvider: d.payment?.provider || "none", staffMe: d.me, shop: d.shop, menu: d.menu, stock: d.stock, promos: d.promos, rewards: d.rewards, members: d.members, staff: d.staff, shift: d.shift, preorders: d.preorders,
         today: d.today.orders.slice().sort((a,b) => b.createdAt - a.createdAt), todayRedeems: d.today.redeems, todayKey: d.today.day, readOnlyMsg: ""});
       S.loaded.menu = S.loaded.staff = true;
       if (S.member) S.member = S.members.find(m => m.id === S.member.id) || null;
@@ -850,7 +864,9 @@ function openPay(){
       <div class="change" id="changeBox"></div>
     </div>
     <div id="pm-qr" class="form" ${payM!=="qr"?"hidden":""}>
-      ${pp ? `<div class="qrbox"><span class="ppbar">PromptPay</span><canvas id="ppCanvas" aria-label="QR พร้อมเพย์"></canvas><b style="font-size:20px">${baht(P.total, 1)}</b><span style="font-size:12px">${esc(sh.name)}</span></div>
+      ${autoQrOn() ? `<div class="qrbox" id="autoQr"><span class="ppbar">PromptPay</span><div class="qrwait"><i></i>กำลังสร้าง QR…</div></div>
+        <p class="small muted" style="margin:0;text-align:center">ให้ลูกค้าสแกนด้วยแอปธนาคาร พอเงินเข้า ระบบจะขึ้น "ชำระเงินสำเร็จ" และออกใบเสร็จเอง</p>
+        <div style="text-align:center"><button class="linkbtn" data-qrmanual>ลูกค้าโอนแล้วแต่ระบบยังไม่ขึ้น? ยืนยันเอง</button></div>` : pp ? `<div class="qrbox"><span class="ppbar">PromptPay</span><canvas id="ppCanvas" aria-label="QR พร้อมเพย์"></canvas><b style="font-size:20px">${baht(P.total, 1)}</b><span style="font-size:12px">${esc(sh.name)}</span></div>
         <p class="small muted" style="margin:0">ให้ลูกค้าสแกนด้วยแอปธนาคาร เงินเข้าบัญชีพร้อมเพย์ของร้านทันที ตรวจสลิปหรือแจ้งเตือนในแอปธนาคารของร้านให้ยอดตรงก่อนกดยืนยัน</p>
         <div class="field"><label for="payRef">เลขอ้างอิงสลิป (ไม่บังคับ)</label><input id="payRef" maxlength="40"></div>`
       : `<div class="notice" style="margin:0">ยังไม่ได้ตั้งค่าหมายเลขพร้อมเพย์ของร้าน ${isMgr() ? `<button class="btn sm" data-goshop>ตั้งค่าตอนนี้</button>` : "ให้ผู้จัดการตั้งค่าในหน้าร้านค้า"}</div>`}
@@ -860,8 +876,9 @@ function openPay(){
       <div class="g2"><div class="field"><label for="cardRef">เลขอนุมัติ (Approval code)</label><input id="cardRef" maxlength="12"></div>
       <div class="field"><label for="card4">เลขท้ายบัตร 4 หลัก</label><input id="card4" inputmode="numeric" maxlength="4"></div></div>
     </div>
-    <div class="actions"><button class="btn" data-close>ยกเลิก</button><button class="btn primary" id="confirmPay" style="min-width:160px;min-height:48px">ยืนยันรับเงิน</button></div>`, "", false);
-  if (pp && payM === "qr") drawQR($("#ppCanvas"), pp).catch(() => toast("สร้าง QR ไม่สำเร็จ ตรวจอินเทอร์เน็ตแล้วลองใหม่"));
+    <div class="actions"><button class="btn" data-close>ยกเลิก</button><button class="btn primary" id="confirmPay" style="min-width:160px;min-height:48px" ${payM === "qr" && autoQrOn() ? "hidden" : ""}>ยืนยันรับเงิน</button></div>`, "", false);
+  if (payM === "qr" && autoQrOn()) startAutoQr(P.total);
+  else if (pp && payM === "qr") drawQR($("#ppCanvas"), pp).catch(() => toast("สร้าง QR ไม่สำเร็จ ตรวจอินเทอร์เน็ตแล้วลองใหม่"));
   updateChange();
 }
 function updateChange(){
@@ -871,11 +888,11 @@ function updateChange(){
     b.className = "change" + (c < 0 ? " short" : "");
     b.innerHTML = c < 0 ? `<span>ยังขาดอีก</span><span>${baht(-c, 1)}</span>` : `<span>เงินทอน</span><span>${baht(c, 1)}</span>`;
     btn.disabled = c < 0; }
-  else if (payM === "qr") btn.disabled = !shop().promptpay;
+  else if (payM === "qr") btn.disabled = !shop().promptpay && !autoQrOn();
   else btn.disabled = false;
 }
-async function confirmPay(){
-  const P = priceCart(); const btn = $("#confirmPay");
+async function confirmPay(opts = {}){
+  const P = priceCart(); const btn = $("#confirmPay") || {};
   const tendered = payM === "cash" ? Number($("#cashIn").value) || 0 : P.total;
   if (tendered < P.total) return;
   btn.disabled = true; btn.textContent = "กำลังบันทึก…";
@@ -883,11 +900,46 @@ async function confirmPay(){
   const r = await store.call("POST", "/api/orders", {
     lines: S.cart.map(l => ({id: l.id, opt: l.opt, sweet: l.sweet, qty: l.qty, reward: l.reward || null})),
     type: S.otype, pay: payM, tendered, ref, coupon: S.coupon, manualDisc: S.manualDisc, note: S.note.trim(),
-    memberPhone: S.member?.id || null, voucher: S.member && S.voucher ? S.voucher : null, expectTotal: P.total});
+    memberPhone: S.member?.id || null, voucher: S.member && S.voucher ? S.voucher : null, expectTotal: P.total, paymentId: opts.paymentId || null});
   if (!r) { btn.disabled = false; btn.textContent = "ยืนยันรับเงิน"; return; }
   S.cart = []; S.coupon = ""; S.manualDisc = 0; S.member = null; S.voucher = null; S.note = ""; S.ticketOpen = false;
   S.today = [r.order, ...S.today];
   showReceipt(r.order, true);
+}
+
+/* ---------- automatic QR payment (Opn Payments or practice mode) ---------- */
+let AQ = null, aqTimer = null;
+const autoQrOn = () => S.payProvider && S.payProvider !== "none" && !S.qrManual;
+async function startAutoQr(total){
+  clearTimeout(aqTimer);
+  const box = () => $("#autoQr");
+  try {
+    if (!AQ || AQ.amount !== total || AQ.status !== "pending") AQ = (await api.req("POST", "/api/payments/qr", {amount: total})).payment;
+  } catch (e) { if (box()) box().innerHTML = `<span class="ppbar">PromptPay</span><div class="small" style="color:#b4465a">${esc(e.message)}</div><button class="btn sm" data-qrretry>ลองใหม่</button>`; return; }
+  const demo = AQ.provider === "demo";
+  if (!box()) return;
+  box().innerHTML = `<span class="ppbar">PromptPay</span>${AQ.qr ? `<img class="qrimg" src="${AQ.qr}" alt="QR พร้อมเพย์">` : `<canvas id="aqCanvas" class="qrimg"></canvas>`}
+    <b style="font-size:20px">${baht(total, 1)}</b>${demo ? `<span class="demo-badge">โหมดทดลอง · ไม่มีเงินเข้าจริง</span>` : ""}
+    <div class="qrwait"><i></i>รอลูกค้าสแกน…</div>
+    ${demo && isMgr() ? `<button class="btn sm" data-qrsim>จำลองว่าลูกค้าโอนแล้ว</button>` : ""}`;
+  if (!AQ.qr) drawQR($("#aqCanvas"), shop().promptpay ? promptPayPayload(shop().promptpay, total) : "BUTTER-BUNNY-DEMO-" + AQ.id).catch(() => {});
+  const myId = AQ.id;
+  const poll = async () => {
+    if (!box() || !AQ || AQ.id !== myId || payM !== "qr") return;   // window closed or method changed
+    try { AQ = (await api.req("GET", "/api/payments/qr/" + myId)).payment; } catch {}
+    if (AQ.status === "paid") return paidOk(total, myId);
+    if (AQ.status === "failed" || AQ.status === "expired") { box().innerHTML = `<span class="ppbar">PromptPay</span><div class="small">QR นี้${AQ.status === "expired" ? "หมดอายุ" : "ชำระไม่สำเร็จ"}แล้ว</div><button class="btn sm" data-qrretry>สร้าง QR ใหม่</button>`; return; }
+    aqTimer = setTimeout(poll, 2500);
+  };
+  aqTimer = setTimeout(poll, 2500);
+}
+async function paidOk(total, paymentId){
+  const b = $("#autoQr"); if (!b) return;
+  b.innerHTML = `<div class="paid-ok"><span class="ok"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><b>ชำระเงินสำเร็จ</b><span>ได้รับ ${baht(total, 1)} แล้ว</span></div>`;
+  try { const c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator(), g = c.createGain(); o.frequency.value = 1046; o.connect(g); g.connect(c.destination); g.gain.setValueAtTime(.2, c.currentTime); g.gain.exponentialRampToValueAtTime(.001, c.currentTime + .6); o.start(); o.stop(c.currentTime + .6); } catch {}
+  await new Promise(r => setTimeout(r, 1300));
+  AQ = null; S.qrManual = false;
+  confirmPay({paymentId});
 }
 
 /* ---------- receipt ---------- */
@@ -1237,7 +1289,7 @@ function openItem(id){
       <div class="g2"><label class="check"><input type="checkbox" id="f-track" ${m.trackStock ? "checked" : ""}> นับสต็อก (ขนมที่อบไว้)</label>
         <div class="field"><label for="f-stock">จำนวนคงเหลือ</label><input id="f-stock" type="number" min="0" value="${stockOf(m.id) ?? ""}" ${m.trackStock ? "" : "disabled"}></div></div>
       <div class="field"><span class="lab">ตัวเลือก (เช่น ร้อน/เย็น/ปั่น) และราคาที่บวกเพิ่ม</span><div id="optRows" style="display:grid;gap:6px"></div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="btn sm" id="optAdd">+ เพิ่มตัวเลือก</button><button type="button" class="btn sm ghost" id="optDrink">ใส่ ร้อน/เย็น/ปั่น</button></div></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="btn sm" id="optAdd">+ เพิ่มตัวเลือก</button><button type="button" class="btn sm ghost" id="optDrink">ใส่ ร้อน/เย็น/ปั่น</button><button type="button" class="btn sm ghost" id="optPound">ตั้งเป็นเค้กปอนด์</button></div></div>
       <label class="check"><input type="checkbox" id="f-sweet" ${m.sweet ? "checked" : ""}> ให้เลือกระดับความหวาน</label>
       <label class="check"><input type="checkbox" id="f-active" ${m.active !== false ? "checked" : ""}> เปิดขาย</label>
       <div id="delBox"></div>
@@ -1248,6 +1300,8 @@ function openItem(id){
   $("#optRows").oninput = e => { const t = e.target; if (t.dataset.on) opts[t.dataset.on].name = t.value; if (t.dataset.oa) opts[t.dataset.oa].add = Number(t.value) || 0; };
   $("#optRows").onclick = e => { const b = e.target.closest("[data-od]"); if (b) { opts.splice(+b.dataset.od, 1); paintOpts(); } };
   $("#optAdd").onclick = () => { opts.push({name:"", add:0}); paintOpts(); };
+  $("#optPound").onclick = () => { const lb = shop().poundPrice; opts = POUNDS_MENU.map(n => ({name: n + " ปอนด์", add: (n - 1) * lb})); paintOpts();
+    $("#f-price").value = lb; $("#f-cat").value = "cake"; $("#f-track").checked = false; $("#f-stock").disabled = true; toast(`ตั้งราคาปอนด์ละ ${baht(lb)} แล้ว`); };
   $("#optDrink").onclick = () => { opts = [{name:"ร้อน", add:0},{name:"เย็น", add:10},{name:"ปั่น", add:20}]; paintOpts(); };
   $("#f-track").onchange = e => $("#f-stock").disabled = !e.target.checked;
   $("#f-img").onchange = async e => { const f = e.target.files[0]; if (!f) return; $("#itemSave").disabled = true; $("#imgPrev").innerHTML = `<span class="small">กำลังอัปโหลด…</span>`;
@@ -1457,12 +1511,13 @@ function viewShop(){
       <h3>การทำงานของร้าน</h3>
       <div class="g2"><div class="field"><label for="s-dsh">เริ่มวันใหม่เวลา (เลขคิวกลับเป็น #001)</label><select id="s-dsh">${[0,1,2,3,4,5,6].map(h => `<option value="${h}" ${+sh.dayStartHour === h ? "selected" : ""}>${String(h).padStart(2,"0")}:00 น.${h ? " (ร้านเปิดเลยเที่ยงคืน)" : " (เที่ยงคืน)"}</option>`).join("")}</select></div>
         <div class="field"><label for="s-low">เตือนสต็อกใกล้หมดเมื่อเหลือไม่เกิน</label><input id="s-low" type="number" min="0" max="999" value="${sh.lowStockAt}"></div></div>
+      <div class="g2"><div class="field"><label for="s-lb">ราคาเค้กปอนด์ (บาท ต่อ 1 ปอนด์)</label><input id="s-lb" type="number" min="1" value="${sh.poundPrice}"></div></div>
       <div class="actions"><button class="btn primary">บันทึกข้อมูลร้าน</button></div></form>
     <div class="card panel"><div class="row"><h3>พนักงาน</h3><button class="btn sm primary" data-staffedit="">+ เพิ่มพนักงาน</button></div>
       <p class="small muted" style="margin:0">พนักงานเลือกชื่อแล้วใส่ PIN เพื่อเข้ากะ ทุกบิลจะบันทึกชื่อคนขาย แคชเชียร์เข้าได้เฉพาะหน้าขาย ออเดอร์ และสมาชิก</p>
       ${S.staff.map(s => `<div class="row" style="padding:8px 0;border-bottom:1px solid var(--line)"><span class="namecell"><span class="av ${avc(s.name)}">${esc(initial(s.name))}</span><span>${esc(s.name)}<br><span class="small muted">${s.role==="manager"?"ผู้จัดการ":"แคชเชียร์"}${s.active===false?" · ปิดใช้งาน":""}</span></span></span><button class="btn sm ghost" data-staffedit="${esc(s.id)}">แก้ไข</button></div>`).join("")}
     </div>
-    ${backupPanel()}${linePanel()}</section>`;
+    ${paymentPanel()}${backupPanel()}${linePanel()}</section>`;
 }
 function openStaff(id){
   const s = S.staff.find(x => x.id === id) || {role:"cashier", active:true};
@@ -1502,7 +1557,7 @@ async function viewLoad(v){
     if (v === "dash" && isMgr()) { S.dash = await api.req("GET", "/api/dashboard"); render(); }
     if (v === "bake") { const [plan, w] = await Promise.all([api.req("GET", "/api/bake-plan"), api.req("GET", "/api/waste")]); S.bake = {plan, waste: w.waste}; render(); }
     if (v === "shift" && isMgr()) { S.shiftHist = (await api.req("GET", "/api/shifts")).shifts; render(); }
-    if (v === "shop" && isMgr()) { const [b, l] = await Promise.all([api.req("GET", "/api/backups"), api.req("GET", "/api/line")]); S.backups = b.backups; S.line = l.line; render(); }
+    if (v === "shop" && isMgr()) { const [b, l, pm] = await Promise.all([api.req("GET", "/api/backups"), api.req("GET", "/api/line"), api.req("GET", "/api/payment")]); S.backups = b.backups; S.line = l.line; S.payment = pm.payment; render(); }
   } catch (e) { if (e.status !== 401) toast(e.message); }
 }
 
@@ -1621,7 +1676,9 @@ function openPreForm(id){
         <div class="field"><label for="pf-phone">เบอร์โทร</label><input id="pf-phone" inputmode="tel" maxlength="10" value="${esc(p.phone || "")}"></div></div>
       <div class="g2"><div class="field"><label for="pf-day">วันรับของ</label><input id="pf-day" type="date" required value="${esc(p.pickupDay)}" min="${S.todayKey}"></div>
         <div class="field"><label for="pf-time">เวลารับ</label><input id="pf-time" type="time" value="${esc(p.pickupTime || "")}"></div></div>
-      <div class="field"><label for="pf-title">สั่งอะไร</label><input id="pf-title" required maxlength="80" list="pf-menu" value="${esc(p.title || "")}" placeholder="เช่น เค้กช็อกโกแลต 2 ปอนด์"><datalist id="pf-menu">${S.menu.map(m => `<option value="${esc(m.name)}">`).join("")}</datalist></div>
+      <div class="field"><span class="lab">สั่งแบบไหน</span><div class="opts" id="pf-mode">${[["pound", "เค้กปอนด์"], ["menu", "เมนูหน้าร้าน"], ["custom", "สั่งพิเศษ (ตั้งราคาเอง)"]].map(([k, v]) => `<button type="button" data-pfmode="${k}">${v}</button>`).join("")}</div></div>
+      <div id="pf-what" class="form"></div>
+      <div class="field" id="pf-title-wrap"><label for="pf-title">สั่งอะไร</label><input id="pf-title" required maxlength="80" value="${esc(p.title || "")}" placeholder="เช่น เค้กแต่งหน้าการ์ตูน 3 ชั้น"></div>
       <div class="field"><label for="pf-msg">ข้อความบนเค้ก</label><input id="pf-msg" maxlength="80" value="${esc(p.message || "")}" placeholder="เช่น Happy Birthday น้องเมย์"></div>
       <div class="field"><label for="pf-det">รายละเอียด (รสชาติ ขนาด สี เทียน)</label><textarea id="pf-det" rows="2" maxlength="300">${esc(p.details || "")}</textarea></div>
       <div class="g3"><div class="field"><label for="pf-qty">จำนวน</label><input id="pf-qty" type="number" min="1" value="${p.qty}"></div>
@@ -1634,6 +1691,7 @@ function openPreForm(id){
       <div class="actions"><button type="button" class="btn" data-close>ยกเลิก</button><button class="btn primary">${id ? "บันทึก" : "บันทึกออเดอร์"}</button></div>
     </form>`, "wide");
   let pay = "cash";
+  preBuilder(id ? "custom" : "pound");
   $("#pf-pay") && ($("#pf-pay").onclick = e => { const b = e.target.closest("[data-pfpay]"); if (!b) return; pay = b.dataset.pfpay; $$("#pf-pay button").forEach(x => x.setAttribute("aria-pressed", x === b)); });
   $("#preForm").onsubmit = async e => { e.preventDefault();
     const v = k => $("#" + k)?.value.trim();
@@ -1642,6 +1700,55 @@ function openPreForm(id){
     if (!id) { body.deposit = +v("pf-dep") || 0; body.pay = pay; }
     try { const r = await api.req(id ? "PATCH" : "POST", id ? "/api/preorders/" + id : "/api/preorders", body); store.soon(); closeModal(); toast(id ? "บันทึกแล้ว" : "รับออเดอร์ " + r.preorder.code + " แล้ว"); if (!id) preSlip(r.preorder); }
     catch (err) { $("#pfErr").textContent = err.message; } };
+}
+// pre-order item builder: menu item and pound cake fill in the title and price; custom is typed in
+const POUNDS = [0.5, 1, 1.5, 2, 2.5, 3, 4, 5];
+const POUNDS_MENU = [1, 1.5, 2, 3, 4];
+const isPoundCake = m => (m.opts || []).some(o => /ปอนด์$/.test(o.name));
+function preBuilder(mode){
+  let manualTotal = mode === "custom" && !!$("#pf-total").value;
+  const lb = shop().poundPrice, cakes = S.menu.filter(m => isPoundCake(m) && m.active !== false), items = S.menu.filter(m => m.active !== false && !isPoundCake(m));
+  const flavor = m => m.name.replace(/^เค้ก/, "").replace(/\s*\(ปอนด์\)\s*$/, "");
+  const paint = () => {
+    $$("#pf-mode button").forEach(b => b.setAttribute("aria-pressed", b.dataset.pfmode === mode));
+    $("#pf-title-wrap").hidden = mode !== "custom";
+    $("#pf-what").innerHTML = mode === "pound" ? `<div class="g2">
+        <div class="field"><label for="pf-flavor">รสเค้ก</label><select id="pf-flavor">${cakes.map(m => `<option value="${esc(flavor(m))}">${esc(flavor(m))}</option>`).join("")}<option value="">รสอื่น (พิมพ์เอง)</option></select></div>
+        <div class="field"><label for="pf-lb">ขนาด</label><select id="pf-lb">${POUNDS.map(n => `<option value="${n}" ${n === 1 ? "selected" : ""}>${n} ปอนด์ · ${baht(n * lb)}</option>`).join("")}</select></div></div>
+        <div class="field" id="pf-flavor2-wrap" hidden><label for="pf-flavor2">รสที่ลูกค้าต้องการ</label><input id="pf-flavor2" maxlength="40" placeholder="เช่น ใบเตยมะพร้าว"></div>
+        <div class="calc" id="pf-calc"></div>`
+      : mode === "menu" ? `<div class="g2">
+        <div class="field"><label for="pf-item">เมนู</label><select id="pf-item">${Object.entries(CATS).map(([c, n]) => { const l = items.filter(m => m.cat === c); return l.length ? `<optgroup label="${n}">${l.map(m => `<option value="${esc(m.id)}">${esc(m.name)} · ${baht(m.price)}</option>`).join("")}</optgroup>` : ""; }).join("")}</select></div>
+        <div class="field" id="pf-opt-wrap"><label for="pf-opt">แบบ</label><select id="pf-opt"></select></div></div>
+        <div class="calc" id="pf-calc"></div>` : `<p class="small muted" style="margin:0">พิมพ์รายการและใส่ราคารวมเอง เช่น เค้กแต่งพิเศษ หรือชุดเบรกจัดเลี้ยง</p>`;
+    if (mode === "menu") fillOpts();
+    calc();
+  };
+  const fillOpts = () => { const m = S.menu.find(x => x.id === $("#pf-item").value); const o = m?.opts || [];
+    $("#pf-opt-wrap").hidden = !o.length; $("#pf-opt").innerHTML = o.map(x => `<option value="${esc(x.name)}">${esc(x.name)}${x.add ? " +" + x.add : ""}</option>`).join(""); };
+  const calc = () => {
+    const qty = Math.max(1, +$("#pf-qty").value || 1);
+    let title = null, unit = null, how = "";
+    if (mode === "pound") {
+      const n = +$("#pf-lb").value, f = $("#pf-flavor").value || $("#pf-flavor2").value.trim() || "…";
+      $("#pf-flavor2-wrap").hidden = !!$("#pf-flavor").value;
+      title = `เค้ก${f} ${n} ปอนด์`; unit = n * lb; how = `${n} ปอนด์ × ${baht(lb)}`;
+    } else if (mode === "menu") {
+      const m = S.menu.find(x => x.id === $("#pf-item").value); if (m) { const o = (m.opts || []).find(x => x.name === $("#pf-opt").value);
+        title = m.name + (o ? ` (${o.name})` : ""); unit = m.price + (o?.add || 0); how = `${baht(m.price)}${o?.add ? " + " + baht(o.add) : ""}`; }
+    }
+    if (title != null) {
+      $("#pf-title").value = title;
+      if (!manualTotal) $("#pf-total").value = r2(unit * qty);
+      $("#pf-calc").innerHTML = `${esc(title)} · ${how}${qty > 1 ? ` × ${qty} ชิ้น` : ""} = <b>${baht(unit * qty)}</b>${manualTotal ? ` · <button type="button" class="linkbtn" id="pf-recalc">ใช้ราคาคำนวณ</button>` : ""}`;
+      $("#pf-recalc") && ($("#pf-recalc").onclick = () => { manualTotal = false; calc(); });
+    }
+  };
+  $("#pf-mode").onclick = e => { const b = e.target.closest("[data-pfmode]"); if (!b) return; mode = b.dataset.pfmode; manualTotal = mode === "custom"; paint(); };
+  $("#pf-what").oninput = $("#pf-what").onchange = e => { if (e.target.id === "pf-item") fillOpts(); calc(); };
+  $("#pf-qty").oninput = calc;
+  $("#pf-total").oninput = () => { manualTotal = true; calc(); };
+  paint();
 }
 function openPickup(p){
   let pay = "cash";
@@ -1753,6 +1860,21 @@ function repExtras(){
 }
 
 /* ---------- backups & LINE (shop page) ---------- */
+function paymentPanel(){
+  if (!isMgr()) return "";
+  const P = S.payment;
+  if (!P) return `<div class="card panel"><h3>รับเงิน QR แบบยืนยันอัตโนมัติ</h3><div class="small muted">กำลังโหลด…</div></div>`;
+  const opt = (k, t, d) => `<label class="check" style="align-items:flex-start"><input type="radio" name="pv" value="${k}" ${P.provider === k ? "checked" : ""}> <span><b>${t}</b><br><span class="small muted">${d}</span></span></label>`;
+  return `<form id="payForm" class="card panel form"><h3>รับเงิน QR แบบยืนยันอัตโนมัติ</h3>
+    <p class="small muted" style="margin:0">QR พร้อมเพย์ธรรมดาไม่แจ้งร้านเมื่อเงินเข้า ถ้าอยากให้หน้าจอขึ้น "ชำระเงินสำเร็จ" เอง ต้องรับเงินผ่านผู้ให้บริการรับชำระเงิน</p>
+    ${opt("none", "ยืนยันเอง (ค่าเริ่มต้น)", "ใช้ QR พร้อมเพย์ของร้าน พนักงานดูแจ้งเตือนในแอปธนาคารแล้วกดยืนยัน ไม่มีค่าธรรมเนียม")}
+    ${opt("demo", "โหมดทดลอง", "ลองดูขั้นตอนอัตโนมัติก่อนสมัครจริง ผู้จัดการกด จำลองว่าลูกค้าโอนแล้ว เพื่อดูหน้าจอชำระเงินสำเร็จ ไม่มีเงินเข้าจริง")}
+    ${opt("opn", "Opn Payments (เดิมชื่อ Omise)", "สร้าง QR พร้อมเพย์ต่อบิล ระบบเช็กทุก 2–3 วินาที เงินเข้าแล้วออกใบเสร็จเอง มีค่าธรรมเนียมต่อรายการตามสัญญากับ Opn เครื่องที่รันเซิร์ฟเวอร์ต้องต่ออินเทอร์เน็ต")}
+    <div class="field"><label for="pv-key">Opn Secret key ${P.hasKey ? `<span class="pill green">บันทึกไว้แล้ว ${esc(P.keyHint)}</span>` : ""}</label><input id="pv-key" type="password" autocomplete="off" placeholder="${P.hasKey ? "เว้นว่างถ้าไม่เปลี่ยน" : "skey_..."}"></div>
+    <ol class="lineguide"><li>สมัครบัญชีร้านค้าที่ opn.ooo และยืนยันตัวตนร้าน</li><li>ส่งอีเมลขอเปิดใช้ PromptPay กับ Opn</li><li>คัดลอก Secret key จากหน้า Keys ใน Dashboard มาวางด้านบน (ใช้ skey_test_ เพื่อทดสอบก่อนได้)</li></ol>
+    <div class="err" id="pvErr"></div>
+    <div class="actions"><button class="btn primary">บันทึกการรับเงิน</button></div></form>`;
+}
 function backupPanel(){
   if (!isMgr()) return "";
   const list = S.backups;
@@ -1808,7 +1930,7 @@ async function opsClick(b, d){
 }
 document.addEventListener("submit", async e => {
   const id = e.target.id;
-  if (!["openShiftForm", "moveForm", "closeShiftForm", "wasteForm", "lineForm"].includes(id)) return;
+  if (!["openShiftForm", "moveForm", "closeShiftForm", "wasteForm", "lineForm", "payForm"].includes(id)) return;
   e.preventDefault();
   if (id === "openShiftForm") { const r = await store.call("POST", "/api/shifts/open", {openingCash: +$("#os-cash").value || 0}); if (r) { S.shift = r.shift; clearDraft(); toast("เปิดกะแล้ว เริ่มขายได้เลย"); S.view = "pos"; render(); } }
   if (id === "moveForm") { if (await store.call("POST", "/api/shifts/current/moves", {kind: $("#mv-kind").value, amount: +$("#mv-amt").value, reason: $("#mv-why").value})) { clearDraft(); toast("บันทึกแล้ว"); } }
@@ -1825,6 +1947,11 @@ document.addEventListener("submit", async e => {
     if (!items.length) { toast("ใส่จำนวนที่ทิ้งอย่างน้อย 1 เมนู"); return; }
     if (await store.call("POST", "/api/waste", {items, reason: $("#w-why").value})) { clearDraft(); toast("บันทึกของที่ทิ้งแล้ว"); viewLoad("bake"); } }
   if (id === "lineForm") await saveLine();
+  if (id === "payForm") {
+    const body = {provider: document.querySelector('input[name="pv"]:checked')?.value || "none"};
+    if ($("#pv-key").value.trim()) body.secretKey = $("#pv-key").value.trim();
+    try { S.payment = (await api.req("PUT", "/api/payment", body)).payment; S.payProvider = S.payment.provider; clearDraft(); render(); toast("บันทึกการรับเงินแล้ว"); }
+    catch (err) { $("#pvErr").textContent = err.message; } }
 });
 
 /* ================= modal / toast ================= */
@@ -1885,7 +2012,10 @@ document.addEventListener("click", async e => {
   if ("note" in d) return inputBox("หมายเหตุออเดอร์", "เช่น หวานน้อย ไม่ใส่น้ำแข็ง แยกถุง", S.note, v => { S.note = v; }, "textarea");
   if ("pickmember" in d) return pickMember();
   if ("unmember" in d) { S.member = null; S.voucher = null; S.cart = S.cart.filter(l => !l.reward); return render(); }
-  if (d.paym) { payM = d.paym; return openPay(); }
+  if (d.paym) { payM = d.paym; S.qrManual = false; return openPay(); }
+  if ("qrmanual" in d) { S.qrManual = true; return openPay(); }
+  if ("qrretry" in d) { AQ = null; return openPay(); }
+  if ("qrsim" in d) { if (AQ) await store.call("POST", `/api/payments/qr/${AQ.id}/simulate`, {}); return; }
   if (d.cash) { $("#cashIn").value = d.cash; return updateChange(); }
   if (b.id === "confirmPay") return confirmPay();
   if ("goshop" in d) { closeModal(); S.view = "shop"; return render(); }
@@ -1927,7 +2057,7 @@ document.addEventListener("submit", async e => {
     const pp = v("s-pp").replace(/\D/g, "");
     if (pp && !promptPayPayload(pp, 1)) { toast("หมายเลขพร้อมเพย์ต้องเป็นเบอร์มือถือ 10 หลัก หรือเลข 13/15 หลัก"); return; }
     const data = {name: v("s-name") || "ร้านของฉัน", tagline: v("s-tag"), branch: v("s-branch"), phone: v("s-phone"), address: v("s-addr"), taxId: v("s-tax"), vat: v("s-vat"), promptpay: pp, footer: v("s-foot"),
-      pointsPer: Math.max(1, +v("s-pper") || 25), birthdayMultiplier: Math.min(5, Math.max(1, +v("s-bmul") || 1)), dayStartHour: +v("s-dsh") || 0, lowStockAt: Math.max(0, +v("s-low") || 0)};
+      pointsPer: Math.max(1, +v("s-pper") || 25), birthdayMultiplier: Math.min(5, Math.max(1, +v("s-bmul") || 1)), dayStartHour: +v("s-dsh") || 0, lowStockAt: Math.max(0, +v("s-low") || 0), poundPrice: Math.max(1, +v("s-lb") || 250)};
     if (await store.call("PUT", "/api/config/shop", data)) { clearDraft(); toast("บันทึกข้อมูลร้านแล้ว"); } }
 });
 document.addEventListener("keydown", e => {

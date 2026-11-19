@@ -5,7 +5,7 @@ const os = require("node:os");
 const fs = require("node:fs");
 const path = require("node:path");
 const { openDb } = require("../server/db");
-const { seedIfEmpty } = require("../server/seed");
+const { seedIfEmpty, addExtras } = require("../server/seed");
 const { createApp } = require("../server/app");
 
 let server, base, db;
@@ -18,7 +18,7 @@ const call = async (method, url, body, token) => {
 
 test.before(async () => {
   db = openDb(":memory:");
-  seedIfEmpty(db);
+  seedIfEmpty(db); addExtras(db);
   const app = createApp({ db, uploadsDir: fs.mkdtempSync(path.join(os.tmpdir(), "bb-up-")) });
   await new Promise(r => { server = app.listen(0, "127.0.0.1", r); });
   base = `http://127.0.0.1:${server.address().port}/api`;
@@ -236,4 +236,64 @@ test("backups: create, list, download", async () => {
   const res = await fetch(`${base}/backups/${made.body.backup.name}`, { headers: { Authorization: "Bearer " + mgr } });
   assert.equal(res.status, 200); assert.ok((await res.arrayBuffer()).byteLength > 10000);
   assert.equal((await call("GET", "/backups/..%2Fbutterbunny.db", undefined, mgr)).status, 404);
+});
+
+test("pound cakes are on the menu and priced per pound", async () => {
+  const menu = (await call("GET", "/bootstrap", undefined, mgr)).body.menu;
+  const cake = menu.find(m => m.id === "m-poundchoc");
+  assert.ok(cake); assert.equal(cake.price, 250);
+  assert.deepEqual(cake.opts.map(o => o.add), [0, 125, 250, 500, 750]);
+  assert.equal(addExtras(db), 0, "extras are added only once");
+  assert.equal((await call("POST", "/shifts/open", { openingCash: 0 }, mgr)).status, 200);
+  const r = await call("POST", "/orders", { lines: [{ id: "m-poundchoc", opt: "2 ปอนด์", qty: 1 }], pay: "card" }, cashier);
+  assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.order.subtotal, 500);
+  assert.equal(r.body.order.total, 450, "spend-500-get-50-off promotion applies");
+});
+
+test("qr payments: demo mode confirms itself; an unpaid or reused QR is refused", async () => {
+  assert.equal((await call("POST", "/payments/qr", { amount: 70 }, cashier)).status, 400, "not configured yet");
+  assert.equal((await call("PUT", "/payment", { provider: "opn" }, mgr)).status, 400, "opn needs a key");
+  assert.equal((await call("PUT", "/payment", { provider: "demo" }, mgr)).body.payment.provider, "demo");
+  const qr = (await call("POST", "/payments/qr", { amount: 70 }, cashier)).body.payment;
+  assert.equal(qr.status, "pending");
+  const sale = { lines: [{ id: "m-latte", qty: 1, opt: "ร้อน" }], pay: "qr", paymentId: qr.id, expectTotal: 70 };
+  assert.equal((await call("POST", "/orders", sale, cashier)).status, 409, "not paid yet");
+  assert.equal((await call("POST", `/payments/qr/${qr.id}/simulate`, {}, cashier)).status, 403);
+  assert.equal((await call("POST", `/payments/qr/${qr.id}/simulate`, {}, mgr)).body.payment.status, "paid");
+  assert.equal((await call("GET", `/payments/qr/${qr.id}`, undefined, cashier)).body.payment.status, "paid");
+  const ok = await call("POST", "/orders", sale, cashier);
+  assert.equal(ok.status, 200, JSON.stringify(ok.body)); assert.ok(ok.body.order.ref.startsWith("ทดลอง"));
+  assert.equal((await call("POST", "/orders", sale, cashier)).status, 409, "QR used once");
+  const qr2 = (await call("POST", "/payments/qr", { amount: 50 }, cashier)).body.payment;
+  await call("POST", `/payments/qr/${qr2.id}/simulate`, {}, mgr);
+  assert.equal((await call("POST", "/orders", { ...sale, paymentId: qr2.id }, cashier)).status, 409, "amount must match");
+});
+
+test("qr payments: Opn Payments charge is created, polled and claimed", async () => {
+  const http = require("node:http");
+  let status = "pending"; const seen = [];
+  const stub = http.createServer((req, res) => {
+    let b = ""; req.on("data", c => b += c); req.on("end", () => {
+      seen.push({ method: req.method, url: req.url, auth: req.headers.authorization, body: b });
+      res.setHeader("Content-Type", req.url.startsWith("/qr") ? "image/svg+xml" : "application/json");
+      if (req.url.startsWith("/qr")) return res.end("<svg xmlns='http://www.w3.org/2000/svg'/>");
+      if (req.method === "POST") return res.end(JSON.stringify({ object: "charge", id: "chrg_test_1", amount: 8500, status: "pending", source: { scannable_code: { image: { download_uri: `http://127.0.0.1:${stub.address().port}/qr/1` } } } }));
+      res.end(JSON.stringify({ object: "charge", id: "chrg_test_1", amount: 8500, status }));
+    });
+  });
+  await new Promise(r => stub.listen(0, "127.0.0.1", r));
+  process.env.OPN_API_BASE = `http://127.0.0.1:${stub.address().port}`;
+  const saved = await call("PUT", "/payment", { provider: "opn", secretKey: "skey_test_abc123" }, mgr);
+  assert.equal(saved.body.payment.hasKey, true); assert.equal(JSON.stringify(saved.body).includes("skey_test_abc123"), false);
+  const qr = (await call("POST", "/payments/qr", { amount: 85 }, cashier)).body.payment;
+  assert.ok(qr.qr.startsWith("data:image/svg+xml;base64,"));
+  assert.ok(seen[0].body.includes("amount=8500") && seen[0].body.includes("source%5Btype%5D=promptpay"));
+  assert.equal(seen[0].auth, "Basic " + Buffer.from("skey_test_abc123:").toString("base64"));
+  assert.equal((await call("GET", `/payments/qr/${qr.id}`, undefined, cashier)).body.payment.status, "pending");
+  status = "successful";
+  assert.equal((await call("GET", `/payments/qr/${qr.id}`, undefined, cashier)).body.payment.status, "paid");
+  const ok = await call("POST", "/orders", { lines: [{ id: "m-caramel", qty: 1, opt: "ร้อน" }], pay: "qr", paymentId: qr.id, expectTotal: 85 }, cashier);
+  assert.equal(ok.status, 200, JSON.stringify(ok.body)); assert.equal(ok.body.order.ref, "chrg_test_1");
+  await call("PUT", "/payment", { provider: "none" }, mgr);
+  stub.close(); delete process.env.OPN_API_BASE;
 });

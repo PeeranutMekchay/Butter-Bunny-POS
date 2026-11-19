@@ -18,9 +18,9 @@ const shots = process.argv[3] || path.join(__dirname, "..", "data");
   step("first run shows setup with brand", (await p.textContent(".brand-name")).includes("Butter Bunny"));
   await p.fill("#su-name", "นุ่น"); await p.fill("#su-pin", "1234"); await p.fill("#su-pin2", "1234"); await p.click("#setupForm button.primary");
   await p.waitForSelector("[data-add]");
-  step("setup signs in and loads 32 seeded menu items", (await p.$$("[data-add]")).length === 32);
+  step("setup signs in and loads 35 seeded menu items", (await p.$$("[data-add]")).length === 35);
   step("sale screen asks to open a shift first", (await p.textContent(".banner.warn")).includes("ยังไม่ได้เปิดกะ"));
-  await p.click(".banner.warn [data-nav=shift]"); await p.fill("#os-cash", "1000"); await p.click("#openShiftForm button.primary");
+  await p.click(".banner.warn [data-nav=shift]"); await p.waitForSelector("#os-cash"); await p.waitForTimeout(500); await p.fill("#os-cash", "1000"); await p.click("#openShiftForm button.primary");
   await p.waitForSelector("[data-add]"); step("open shift returns to the sale screen", !(await p.$(".banner.warn [data-nav=shift]")));
 
   // sell 4 egg tarts (buy 3 get 1) + iced latte
@@ -84,6 +84,17 @@ const shots = process.argv[3] || path.join(__dirname, "..", "data");
   step("QR payment saved with slip reference", (await p.textContent("#rcpt")).includes("พร้อมเพย์ SLIP123"));
   await p.click(".modal [data-close]");
 
+  // automatic QR confirmation (practice mode)
+  await p.click("[data-nav=shop]"); await p.waitForSelector("#payForm"); await p.check('input[name="pv"][value="demo"]'); await p.click("#payForm button.primary"); await p.waitForTimeout(500);
+  await p.click("[data-nav=pos]"); await clickItem("บราวนี่"); await p.click("[data-pay]"); await p.click('[data-paym="qr"]');
+  await p.waitForSelector("[data-qrsim]"); step("auto QR waits for the customer", (await p.textContent("#autoQr")).includes("รอลูกค้าสแกน") && !(await p.isVisible("#confirmPay")));
+  await p.click("[data-qrsim]"); await p.waitForSelector(".paid-ok", { timeout: 8000 });
+  step("payment success shows by itself", (await p.textContent(".paid-ok")).includes("ชำระเงินสำเร็จ"));
+  await p.screenshot({ path: path.join(shots, "e2e-paid.png") });
+  await p.waitForSelector("#rcpt", { timeout: 8000 });
+  step("receipt opens without pressing confirm", (await p.textContent("#rcpt")).includes("พร้อมเพย์ ทดลอง"));
+  await p.click(".modal [data-close]");
+
   // customer queue screen shows the ready order
   const qp = await ctx.newPage();
   // stand-in Thai voice so the announcement text can be checked in a headless browser
@@ -100,6 +111,7 @@ const shots = process.argv[3] || path.join(__dirname, "..", "data");
   await p.click("[data-nav=orders]"); await p.locator("[data-st]").first().click(); await qp.waitForTimeout(800);
   await qp.screenshot({ path: path.join(shots, "e2e-queue.png") });
   step("queue screen updates live when an order is ready", (await qp.textContent(".ready")).includes("#00"));
+  step("the bunny cheers when an order is ready", !!(await qp.$("#mascot.cheer")) && (await qp.textContent("#bubble")).includes("พร้อมแล้ว"));
   await qp.waitForTimeout(1500);
   const spoken = await qp.evaluate(() => window.__spoken);
   step("ready order is announced in Thai", spoken.some(t => /^ออเดอร์ที่ ศูนย์ ศูนย์ (หนึ่ง|สอง) ทำเสร็จแล้ว เชิญรับได้เลยค่ะ$/.test(t)), spoken[0] || "nothing spoken");
@@ -107,12 +119,17 @@ const shots = process.argv[3] || path.join(__dirname, "..", "data");
 
   // pre-order with deposit, then pickup
   await p.click("[data-nav=pre]"); await p.click('[data-preedit=""]');
-  await p.fill("#pf-cus", "คุณแพร"); await p.fill("#pf-phone", "0891112222"); await p.fill("#pf-title", "เค้กช็อกโกแลต 2 ปอนด์"); await p.fill("#pf-msg", "Happy Birthday แพร");
-  await p.fill("#pf-total", "900"); await p.fill("#pf-dep", "300"); await p.click("#preForm button.primary"); await p.waitForTimeout(800);
+  await p.fill("#pf-cus", "คุณแพร"); await p.fill("#pf-phone", "0891112222"); await p.fill("#pf-msg", "Happy Birthday แพร");
+  await p.selectOption("#pf-lb", "2");
+  step("pound cake price fills itself (2 lb × ฿250)", (await p.inputValue("#pf-total")) === "500" && (await p.inputValue("#pf-title")).includes("2 ปอนด์"), await p.inputValue("#pf-title"));
+  await p.click('[data-pfmode="menu"]'); await p.selectOption("#pf-item", "m-cookie"); await p.fill("#pf-qty", "12");
+  step("menu item price fills itself (12 × ฿39)", (await p.inputValue("#pf-total")) === "468");
+  await p.fill("#pf-qty", "1"); await p.click('[data-pfmode="pound"]'); await p.selectOption("#pf-lb", "2");
+  await p.fill("#pf-dep", "200"); await p.click("#preForm button.primary"); await p.waitForTimeout(800);
   step("pre-order saved with balance", (await p.textContent(".main")).includes("ค้างจ่าย"));
   await p.screenshot({ path: path.join(shots, "e2e-pre.png") });
   await p.click('[data-preday="all"]'); await p.click("[data-prepick]"); await p.fill("#pk-cash", "1000"); await p.click("#pkYes"); await p.waitForTimeout(600);
-  step("pre-order picked up", (await p.textContent("#toastRoot")).includes("ทอนเงิน ฿400"));
+  step("pre-order picked up", (await p.textContent("#toastRoot")).includes("ทอนเงิน ฿700"));
   // waste & bake plan
   await p.click("[data-nav=bake]"); await p.waitForSelector("#wasteForm");
   await p.fill("#wq-m-cookie", "2"); await p.click("#wasteForm button.primary"); await p.waitForTimeout(600);

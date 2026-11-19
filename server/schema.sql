@@ -239,3 +239,17 @@ CREATE TABLE IF NOT EXISTS waste (
   staff_name TEXT
 );
 CREATE INDEX IF NOT EXISTS waste_day ON waste(day);
+
+-- QR payments through a payment provider (auto-confirmed when the money arrives).
+CREATE TABLE IF NOT EXISTS qr_payments (
+  id           TEXT PRIMARY KEY,
+  provider     TEXT NOT NULL,           -- opn | demo
+  provider_ref TEXT NOT NULL,           -- e.g. Opn charge id
+  amount       REAL NOT NULL,
+  status       TEXT NOT NULL CHECK (status IN ('pending', 'paid', 'failed', 'expired')),
+  created_at   INTEGER NOT NULL,
+  paid_at      INTEGER,
+  order_id     TEXT,
+  staff_name   TEXT,
+  qr           TEXT                     -- data URL of the provider's QR image
+);
