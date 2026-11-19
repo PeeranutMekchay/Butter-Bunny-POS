@@ -7,10 +7,15 @@
   const r2 = n => Math.round(n * 100) / 100;
   const pad = n => String(n).padStart(2, "0");
   const dayKey = d => { const x = new Date(d); return x.getFullYear() + "-" + pad(x.getMonth() + 1) + "-" + pad(x.getDate()); };
+  // The shop's business day: with dayStartHour = 4, sales at 01:30 still belong to the previous day.
+  const businessDay = (d, startHour = 0) => dayKey(new Date(new Date(d).getTime() - (Number(startHour) || 0) * 3600e3));
+  // member.birthday is "MM-DD"
+  const isBirthMonth = (member, now = new Date()) => !!(member && member.birthday && Number(String(member.birthday).slice(0, 2)) === now.getMonth() + 1);
 
   const DEFAULT_SHOP = {
     name: "Butter Bunny บัตเตอร์บันนี่", tagline: "เบเกอรี่อบสดทุกเช้า & กาแฟหอมกรุ่น", branch: "", address: "", phone: "", taxId: "",
-    promptpay: "", vat: "incl", footer: "ขอบคุณที่แวะมาหาเจ้ากระต่ายเนยนะคะ แล้วมาอีกน้า", pointsPer: 25
+    promptpay: "", vat: "incl", footer: "ขอบคุณที่แวะมาหาเจ้ากระต่ายเนยนะคะ แล้วมาอีกน้า", pointsPer: 25,
+    dayStartHour: 0, birthdayMultiplier: 2, lowStockAt: 5
   };
 
   function promoLive(p, now = new Date()) {
@@ -67,9 +72,10 @@
     const total = r2(Math.max(0, after));
     const vat = sh.vat === "incl" ? r2(total * 7 / 107) : 0;
     const codeValid = !code || avail.some(p => p.code && p.code.toUpperCase() === code);
-    return {lines, subtotal, applied, promoTotal, manual, pointsUsed, pointsDisc, voucherName: vr ? vr.name : null, total, vat, codeValid,
-      pointsEarned: member ? Math.floor(total / Math.max(1, sh.pointsPer)) : 0};
+    const birthday = isBirthMonth(member, now), mult = birthday ? Math.max(1, Number(sh.birthdayMultiplier) || 1) : 1;
+    return {lines, subtotal, applied, promoTotal, manual, pointsUsed, pointsDisc, voucherName: vr ? vr.name : null, total, vat, codeValid, birthday,
+      pointsEarned: member ? Math.floor(total / Math.max(1, sh.pointsPer)) * mult : 0};
   }
 
-  return {r2, dayKey, DEFAULT_SHOP, promoLive, inScope, promoAmount, price};
+  return {r2, dayKey, businessDay, isBirthMonth, DEFAULT_SHOP, promoLive, inScope, promoAmount, price};
 });

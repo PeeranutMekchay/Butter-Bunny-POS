@@ -65,6 +65,12 @@ test("auth: protected routes need a session, manager routes need a manager", asy
 const stockOf = id => db.prepare("SELECT qty FROM stock WHERE id = ?").get(id)?.qty;
 const pointsOf = phone => db.prepare("SELECT points FROM members WHERE phone = ?").get(phone).points;
 
+test("shift: selling needs an open shift; only one can be open", async () => {
+  assert.equal((await call("POST", "/orders", { lines: [{ id: "m-latte", qty: 1 }], pay: "card" }, cashier)).status, 409);
+  assert.equal((await call("POST", "/shifts/open", { openingCash: 1000 }, cashier)).status, 200);
+  assert.equal((await call("POST", "/shifts/open", { openingCash: 0 }, mgr)).status, 409);
+});
+
 test("checkout: server prices the bill, applies buy-3-get-1, cuts stock", async () => {
   const before = stockOf("m-eggtart");
   const r = await call("POST", "/orders", { lines: [{ id: "m-eggtart", qty: 4 }], type: "dine", pay: "cash", tendered: 200, expectTotal: 135 }, cashier);
@@ -147,4 +153,87 @@ test("catalog: validation and CRUD", async () => {
   assert.equal((await call("PUT", "/config/shop", { promptpay: "12345" }, mgr)).status, 400);
   assert.equal((await call("PUT", "/config/shop", { promptpay: "0812345678" }, mgr)).body.shop.promptpay, "0812345678");
   assert.equal((await call("DELETE", "/menu/m-new", undefined, mgr)).status, 200);
+});
+
+test("shared: business day honours the day start hour; birthday month doubles points", async () => {
+  const P = require("../shared/pricing");
+  assert.equal(P.businessDay(new Date("2026-11-19T01:30:00"), 4), "2026-11-18");
+  assert.equal(P.businessDay(new Date("2026-11-19T04:00:00"), 4), "2026-11-19");
+  const month = String(new Date().getMonth() + 1).padStart(2, "0");
+  assert.equal((await call("POST", "/members", { phone: "0822222222", name: "เกิดเดือนนี้", birthday: month + "-15" }, cashier)).status, 200);
+  assert.equal((await call("POST", "/members", { phone: "0833333333", name: "ผิด", birthday: "13-40" }, cashier)).status, 400);
+  const r = await call("POST", "/orders", { lines: [{ id: "m-basque", qty: 2 }], pay: "card", memberPhone: "0822222222" }, cashier);
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.order.pointsEarned, Math.floor(250 / 25) * 2);
+});
+
+test("preorders: deposit, pickup with change, cancel with refund", async () => {
+  const p = await call("POST", "/preorders", { customer: "คุณแพร", phone: "0899999999", pickupDay: "2026-12-24", pickupTime: "15:00",
+    title: "เค้กช็อกโกแลต 2 ปอนด์", message: "Happy Birthday แพร", total: 900, deposit: 300, pay: "cash" }, cashier);
+  assert.equal(p.status, 200, JSON.stringify(p.body));
+  assert.equal(p.body.preorder.code, "P0001"); assert.equal(p.body.preorder.balance, 600);
+  assert.equal((await call("POST", "/preorders", { customer: "x", pickupDay: "2026-12-24", title: "x", total: 100, deposit: 200, pay: "cash" }, cashier)).status, 400);
+  const id = p.body.preorder.id;
+  assert.equal((await call("PATCH", `/preorders/${id}`, { total: 200 }, cashier)).status, 400, "total below paid");
+  assert.equal((await call("POST", `/preorders/${id}/ready`, {}, cashier)).body.preorder.status, "ready");
+  const pick = await call("POST", `/preorders/${id}/pickup`, { pay: "cash", tendered: 1000 }, cashier);
+  assert.equal(pick.status, 200); assert.equal(pick.body.change, 400); assert.equal(pick.body.preorder.status, "picked"); assert.equal(pick.body.preorder.balance, 0);
+  assert.equal((await call("POST", `/preorders/${id}/pickup`, { pay: "cash", tendered: 1000 }, cashier)).status, 409);
+  const q = await call("POST", "/preorders", { customer: "คุณบี", pickupDay: "2026-12-25", title: "คัพเค้ก 12 ชิ้น", total: 480, deposit: 200, pay: "qr" }, cashier);
+  const c = await call("POST", `/preorders/${q.body.preorder.id}/cancel`, { refund: true, pay: "qr", reason: "ลูกค้ายกเลิก" }, cashier);
+  assert.equal(c.body.preorder.status, "cancelled"); assert.equal(c.body.preorder.paid, 0);
+  const sh = (await call("GET", "/shifts/current", undefined, cashier)).body.shift.summary;
+  assert.equal(sh.preorder.cash, 900); assert.equal(sh.preorder.qr, 0);
+});
+
+test("waste: throwing away reduces stock; bake plan suggests quantities", async () => {
+  const before = stockOf("m-cookie");
+  assert.equal((await call("POST", "/waste", { items: [{ menuId: "m-cookie", qty: 3 }], reason: "หมดอายุ" }, cashier)).status, 200);
+  assert.equal(stockOf("m-cookie"), before - 3);
+  assert.equal((await call("POST", "/waste", { items: [{ menuId: "m-cookie", qty: 9999 }] }, cashier)).status, 400);
+  const plan = (await call("GET", "/bake-plan", undefined, cashier)).body;
+  const tart = plan.items.find(i => i.id === "m-eggtart");
+  assert.ok(tart && tart.soldToday >= 4 && Number.isInteger(tart.suggest));
+});
+
+test("queue screen and dashboard", async () => {
+  const q = (await call("GET", "/queue")).body;
+  assert.ok(q.preparing.length + q.ready.length >= 1);
+  assert.equal(JSON.stringify(q).includes("total"), false, "queue screen shows no money");
+  assert.equal((await call("GET", "/dashboard", undefined, cashier)).status, 403);
+  const d = (await call("GET", "/dashboard", undefined, mgr)).body;
+  assert.ok(d.today.sales > 0 && d.hourly.today.length === 24 && d.shift);
+});
+
+test("line: settings hide the token; test message and shift-close summary are pushed", async () => {
+  const http = require("node:http");
+  const got = [];
+  const stub = http.createServer((req, res) => { let b = ""; req.on("data", c => b += c); req.on("end", () => { got.push({ auth: req.headers.authorization, url: req.url, body: JSON.parse(b) }); res.end("{}"); }); });
+  await new Promise(r => stub.listen(0, "127.0.0.1", r));
+  process.env.LINE_API_BASE = `http://127.0.0.1:${stub.address().port}`;
+  const to = "U" + "a".repeat(32);
+  assert.equal((await call("PUT", "/line", { enabled: true, token: "", to }, mgr)).status, 400, "needs a token");
+  const saved = await call("PUT", "/line", { enabled: true, token: "secret-token-1234", to }, mgr);
+  assert.equal(saved.body.line.hasToken, true); assert.equal(JSON.stringify(saved.body).includes("secret-token"), false);
+  assert.equal((await call("POST", "/line/test", {}, mgr)).status, 200);
+  assert.equal(got[0].auth, "Bearer secret-token-1234"); assert.equal(got[0].url, "/v2/bot/message/push"); assert.equal(got[0].body.to, to);
+  // close the shift: counted cash vs expected, and a LINE summary
+  const cur = (await call("GET", "/shifts/current", undefined, cashier)).body.shift;
+  const closed = await call("POST", "/shifts/current/close", { counted: cur.expectedCash - 20, note: "ทอนผิด" }, cashier);
+  assert.equal(closed.status, 200); assert.equal(closed.body.shift.diff, -20);
+  await new Promise(r => setTimeout(r, 300));
+  assert.ok(got.some(g => g.body.messages[0].text.includes("ปิดกะ") && g.body.messages[0].text.includes("ขาด")));
+  assert.equal((await call("GET", "/shifts/current", undefined, cashier)).body.shift, null);
+  assert.equal((await call("GET", "/shifts", undefined, mgr)).body.shifts.length, 1);
+  stub.close(); delete process.env.LINE_API_BASE;
+});
+
+test("backups: create, list, download", async () => {
+  const made = await call("POST", "/backups", {}, mgr);
+  assert.equal(made.status, 200, JSON.stringify(made.body));
+  const list = (await call("GET", "/backups", undefined, mgr)).body.backups;
+  assert.equal(list[0].name, made.body.backup.name);
+  const res = await fetch(`${base}/backups/${made.body.backup.name}`, { headers: { Authorization: "Bearer " + mgr } });
+  assert.equal(res.status, 200); assert.ok((await res.arrayBuffer()).byteLength > 10000);
+  assert.equal((await call("GET", "/backups/..%2Fbutterbunny.db", undefined, mgr)).status, 404);
 });

@@ -396,6 +396,54 @@ body{background-image:radial-gradient(var(--dot) 1.6px,transparent 1.9px);backgr
 @media (max-width:900px){.tiers{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:520px){.tiers{grid-template-columns:1fr}.shelf{grid-template-columns:repeat(2,minmax(0,1fr))}.small-shelf{grid-template-columns:repeat(2,minmax(0,1fr))}.tag .nm{font-size:16px}.stamp{width:54px;height:54px}.stamp b{font-size:18px}}
 
+/* ===== shifts, pre-orders, bake plan, dashboard ===== */
+.rail{overflow-y:auto;scrollbar-width:none}
+.rail button{padding:6px 4px}
+.banner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-radius:14px;padding:10px 14px;margin-bottom:14px;font-size:14px}
+.banner.warn{background:var(--honey-soft);color:var(--fg)}
+.banner.promo{background:var(--accent-soft);color:var(--accent-ink)}
+.banner .pulse{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 var(--accent);animation:pulse 1.8s infinite;flex:none}
+.banner b{font-family:var(--ff-display);font-weight:500}
+.banner .btn{margin-left:auto}
+@keyframes pulse{70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:16px;align-items:start}
+.stat{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.stat div{background:var(--soft);border-radius:12px;padding:10px 12px}
+.stat .l{font-size:12px;color:var(--muted)} .stat .v{font-family:var(--ff-display);font-size:20px;color:var(--brand-ink)}
+.bigcash{font-family:var(--ff-brand);font-size:40px;color:var(--brand-ink);line-height:1.1}
+.denoms{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.denoms label{display:flex;align-items:center;gap:8px;background:var(--soft);border-radius:12px;padding:6px 10px;font-size:14px}
+.denoms label b{min-width:44px;font-family:var(--ff-display);font-weight:500}
+.denoms input{width:100%;min-width:0;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 8px;text-align:right}
+.diff{border-radius:14px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;font-family:var(--ff-display);font-size:18px}
+.diff.ok{background:var(--accent-soft);color:var(--accent-ink)} .diff.bad{background:var(--rose-soft);color:var(--rose)} .diff.over{background:var(--honey-soft);color:var(--honey)}
+.days{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:16px}
+.days button{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:8px 12px;cursor:pointer;display:grid;justify-items:center;gap:2px;min-width:64px}
+.days button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.days small{font-size:11px;opacity:.8} .days b{font-family:var(--ff-display);font-size:18px;font-weight:500}
+.days i{font-style:normal;font-size:11px;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:0 7px;min-height:16px}
+.days button[aria-pressed="true"] i{background:var(--on-accent);color:var(--accent)}
+.days i:empty{visibility:hidden}
+.pre{padding:16px 18px;display:grid;gap:8px;border-left:5px solid var(--line)}
+.pre.pending{border-left-color:var(--honey)} .pre.ready{border-left-color:var(--accent)} .pre.picked,.pre.cancelled{opacity:.7}
+.pre .h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.pre h3{font-family:var(--ff-brand);font-weight:400;font-size:21px;color:var(--brand-ink);margin:0}
+.pre .msg{font-family:var(--ff-brand);font-size:17px;background:var(--soft);border-radius:10px;padding:6px 12px;color:var(--brand-ink)}
+.pre .money{display:flex;gap:14px;flex-wrap:wrap;font-size:14px}
+.pre .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.daygroup{display:grid;gap:12px;margin-bottom:22px}
+.daygroup>h3{font-family:var(--ff-brand);font-weight:400;font-size:20px;color:var(--brand-ink);margin:4px 0 0}
+.plan td.big{font-family:var(--ff-brand);font-size:24px;color:var(--brand-ink)}
+.wq{width:76px;min-height:34px;padding:4px 10px}
+.vs{font-size:12px;border-radius:999px;padding:1px 8px;margin-left:6px;white-space:nowrap}
+.vs.up{background:var(--accent-soft);color:var(--accent-ink)} .vs.down{background:var(--rose-soft);color:var(--rose)}
+.bar2{position:relative}
+.bar2 em{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:30px;border-radius:6px 6px 2px 2px;background:var(--line);z-index:0}
+.bar2 i{position:relative;z-index:1;width:60%!important}
+.bday{background:var(--peach-soft);color:var(--peach)}
+.lineguide{font-size:13px;color:var(--muted);margin:0;padding-left:18px;display:grid;gap:4px}
+@media (max-width:520px){.bigcash{font-size:32px}}
+
 @media (max-width:1100px){.pos{grid-template-columns:minmax(0,1fr) 340px}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:900px){
   .app{grid-template-columns:1fr}
@@ -453,13 +501,18 @@ const ICON = {
   cash:'<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/>',
   qr:'<rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2"/>',
   card:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/>',
+  pre:'<path d="M4 21h16M5 21v-8h14v8M8 13v-3M12 13v-3M16 13v-3"/><path d="M8 7.5v.5M12 6.5v1M16 7.5v.5M5 16c2 1.4 4.5 1.4 7 0s5-1.4 7 0"/>',
+  shift:'<rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 12h18M10 16h4M7 5V3M17 5V3"/>',
+  bake:'<path d="M12 21V9"/><path d="M12 9c-3 0-4-2-4-5 3 0 4 2 4 5Zm0 0c3 0 4-2 4-5-3 0-4 2-4 5ZM12 14c-3 0-4-2-4-5 3 0 4 2 4 5Zm0 0c3 0 4-2 4-5-3 0-4 2-4 5ZM12 19c-3 0-4-2-4-5 3 0 4 2 4 5Zm0 0c3 0 4-2 4-5-3 0-4 2-4 5Z"/>',
+  dash:'<path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l4-5"/><circle cx="12" cy="17" r="1.5"/>',
+  tv:'<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
   rewards:'<rect x="3" y="8" width="18" height="5" rx="1"/><path d="M5 13v7h14v-7M12 8v12M12 8c-1.5-3-5-4-5-1.5S12 8 12 8Zm0 0c1.5-3 5-4 5-1.5S12 8 12 8Z"/>'
 };
 const svg = (k, w=22) => `<svg viewBox="0 0 24 24" width="${w}" height="${w}" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
 const BUNNY = `<svg viewBox="0 0 64 64" width="40" height="40" aria-hidden="true"> <path d="M10 9l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9z" fill="#F4A3BE"/> <path d="M54.5 6l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z" fill="#F2C94C"/> <circle cx="51" cy="17" r="1.3" fill="#F4A3BE"/> <circle cx="13" cy="21" r="1" fill="#F2C94C"/> <g stroke="#B98B73" stroke-width="1.6" fill="#FFFDFB"> <ellipse cx="27.2" cy="19" rx="3.7" ry="9.5" transform="rotate(-12 27.2 19)"/> <ellipse cx="36.8" cy="19" rx="3.7" ry="9.5" transform="rotate(12 36.8 19)"/> </g> <ellipse cx="27.2" cy="20" rx="1.6" ry="6.3" transform="rotate(-12 27.2 20)" fill="#F4A3BE"/> <ellipse cx="36.8" cy="20" rx="1.6" ry="6.3" transform="rotate(12 36.8 20)" fill="#F4A3BE"/> <ellipse cx="32" cy="45" rx="11" ry="9" fill="#FFFDFB" stroke="#B98B73" stroke-width="1.6"/> <circle cx="32" cy="33.5" r="9" fill="#FFFDFB" stroke="#B98B73" stroke-width="1.6"/> <circle cx="28.6" cy="33.4" r="1.3" fill="#4A2F3A"/> <circle cx="35.4" cy="33.4" r="1.3" fill="#4A2F3A"/> <ellipse cx="32" cy="35.4" rx=".95" ry=".7" fill="#E5638F"/> <path d="M30.5 36.7q1.5 1.3 3 0" fill="none" stroke="#4A2F3A" stroke-width="1.1" stroke-linecap="round"/> <circle cx="25.9" cy="36.6" r="1.9" fill="#F4A3BE" opacity=".75"/> <circle cx="38.1" cy="36.6" r="1.9" fill="#F4A3BE" opacity=".75"/> <path d="M6 34A26 26 0 0 0 58 34A27.8 27.8 0 0 1 6 34Z" fill="#F7D774" stroke="#D9A23A" stroke-width="1.5" stroke-linejoin="round"/> <path d="M10.5 41.5A22.5 22.5 0 0 0 27 56" fill="none" stroke="#FFF3BF" stroke-width="2.2" stroke-linecap="round"/> <path d="M39.5 58.6c.4 1.8.2 3.4-1 3.8-1.3.3-1.9-1.2-1.4-3.4" fill="#F7D774" stroke="#D9A23A" stroke-width="1.2" stroke-linejoin="round"/> <ellipse cx="46" cy="52.5" rx="2.6" ry="1.4" transform="rotate(-28 46 52.5)" fill="#FFE58A"/> <g fill="#FFFDFB" stroke="#B98B73" stroke-width="1.4"> <ellipse cx="26.6" cy="51.8" rx="2.8" ry="1.9"/> <ellipse cx="37.4" cy="51.8" rx="2.8" ry="1.9"/> </g> </svg>`;
 const bunny = size => BUNNY.replace('width="40" height="40"', `width="${size}" height="${size}"`);
 const avc = s => "c" + ([...String(s || "")].reduce((a, c) => a + c.codePointAt(0), 0) % 5);
-const SUB = {pos:"แตะเมนูเพื่อเพิ่มลงบิล", orders:"ติดตามคิวตั้งแต่เคาน์เตอร์ถึงมือลูกค้า", members:"ลูกค้าประจำและแต้มสะสม", menu:"เมนู รูปภาพ และสต็อกของวันนี้", promos:"โปรที่ทำให้ลูกค้ายิ้มได้", rewards:"ตู้ของรางวัลสำหรับแลกแต้มสมาชิก", report:"ภาพรวมยอดขายของร้าน", shop:"ข้อมูลร้าน พร้อมเพย์ และทีมงาน"};
+const SUB = {dash:"ยอดขายวันนี้เทียบเมื่อวานและสัปดาห์ก่อน", pre:"เค้กวันเกิดและออเดอร์จัดเลี้ยงพร้อมมัดจำ", shift:"เปิดกะ นับเงินในลิ้นชัก และปิดกะ", bake:"บันทึกของเหลือตอนปิดร้าน และจำนวนที่ควรอบพรุ่งนี้", pos:"แตะเมนูเพื่อเพิ่มลงบิล", orders:"ติดตามคิวตั้งแต่เคาน์เตอร์ถึงมือลูกค้า", members:"ลูกค้าประจำและแต้มสะสม", menu:"เมนู รูปภาพ และสต็อกของวันนี้", promos:"โปรที่ทำให้ลูกค้ายิ้มได้", rewards:"ตู้ของรางวัลสำหรับแลกแต้มสมาชิก", report:"ภาพรวมยอดขายของร้าน", shop:"ข้อมูลร้าน พร้อมเพย์ และทีมงาน"};
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -491,7 +544,8 @@ const S = {
   staffMe: null, view: "pos",
   cart: [], otype: "dine", cat: "all", query: "", coupon: "", manualDisc: 0, member: null, voucher: null, note: "",
   rep: {range: "today", from: dayKey(Date.now()), to: dayKey(Date.now()), orders: null, loading: false},
-  ticketOpen: false, readOnlyMsg: "", online: true, pub: null, todayKey: null
+  ticketOpen: false, readOnlyMsg: "", online: true, pub: null, todayKey: null,
+  shift: null, preorders: [], preDay: "all", dash: null, bake: null, shiftHist: null, backups: null, line: null
 };
 const shop = () => ({...BBPricing.DEFAULT_SHOP, ...S.shop});
 const isMgr = () => S.staffMe?.role === "manager";
@@ -525,7 +579,9 @@ const store = {
     if (api.token) await this.refresh();
     this.connect();
     // a new day starts a fresh queue and order board
-    setInterval(() => { if (S.staffMe && S.todayKey && dayKey(Date.now()) !== S.todayKey) this.refresh(); }, 60000);
+    setInterval(() => { if (S.staffMe && S.todayKey && BBPricing.businessDay(Date.now(), shop().dayStartHour) !== S.todayKey) this.refresh(); }, 60000);
+    // promo countdowns on the sale screen
+    setInterval(() => { if (S.staffMe && S.view === "pos" && !$("#modalRoot").innerHTML) render(); }, 30000);
   },
   async loadPublic(){
     try {
@@ -538,12 +594,13 @@ const store = {
   async refresh(){
     try {
       const d = await api.req("GET", "/api/bootstrap");
-      Object.assign(S, {staffMe: d.me, shop: d.shop, menu: d.menu, stock: d.stock, promos: d.promos, rewards: d.rewards, members: d.members, staff: d.staff,
+      Object.assign(S, {staffMe: d.me, shop: d.shop, menu: d.menu, stock: d.stock, promos: d.promos, rewards: d.rewards, members: d.members, staff: d.staff, shift: d.shift, preorders: d.preorders,
         today: d.today.orders.slice().sort((a,b) => b.createdAt - a.createdAt), todayRedeems: d.today.redeems, todayKey: d.today.day, readOnlyMsg: ""});
       S.loaded.menu = S.loaded.staff = true;
       if (S.member) S.member = S.members.find(m => m.id === S.member.id) || null;
     } catch (e) { if (e.status !== 401) S.readOnlyMsg = e.message; }
     render();
+    if (S.staffMe) viewLoad(S.view);
   },
   soon(){ clearTimeout(this.refreshT); this.refreshT = setTimeout(() => S.staffMe ? this.refresh() : this.loadPublic(), 150); },
   connect(){
@@ -563,7 +620,7 @@ const store = {
     catch (e) { toast(e.message); return null; }
   },
   async uploadImage(blob){ const r = await api.req("POST", "/api/uploads", undefined, blob); return {img: r.url}; },
-  async getRange(from, to){ return (await api.req("GET", `/api/orders?from=${from}&to=${to}`)).orders; },
+  async getRange(from, to){ return api.req("GET", `/api/orders?from=${from}&to=${to}`); },
   async save(filename, data){
     try {
       const blob = data instanceof Blob ? data : new Blob([data], {type: filename.endsWith(".csv") ? "text/csv;charset=utf-8" : "application/pdf"});
@@ -649,7 +706,7 @@ function priceCart(){
 const itemPromoTag = m => S.promos.find(p => promoLive(p) && !p.code && p.type !== "minspend" && inScope(p, {id:m.id, cat:m.cat}));
 
 /* ================= rendering ================= */
-const NAV = [["pos","ขาย",0],["orders","ออเดอร์",0],["members","สมาชิก",0],["menu","เมนู",1],["promos","โปรโมชั่น",1],["rewards","รางวัล",1],["report","รายงาน",1],["shop","ร้านค้า",1]];
+const NAV = [["dash","ภาพรวม",1],["pos","ขาย",0],["orders","ออเดอร์",0],["pre","สั่งล่วงหน้า",0],["shift","กะ",0],["bake","แผนอบ",0],["members","สมาชิก",0],["menu","เมนู",1],["promos","โปรโมชั่น",1],["rewards","รางวัล",1],["report","รายงาน",1],["shop","ร้านค้า",1]];
 let renderQ = false;
 function render(){ if (renderQ) return; renderQ = true; requestAnimationFrame(() => { renderQ = false; draw(); }); }
 function draw(){
@@ -657,7 +714,7 @@ function draw(){
   if (!S.staffMe) { $("#root").innerHTML = renderLogin(); drawDots(); applyDraft(); restore(keepFocus, selS); return; }
   if (!isMgr() && NAV.find(n => n[0] === S.view)?.[2]) S.view = "pos";
   const pend = S.today.filter(o => o.status === "preparing").length;
-  const views = {pos: viewPOS, orders: viewOrders, members: viewMembers, menu: viewMenu, promos: viewPromos, rewards: viewRewards, report: viewReport, shop: viewShop};
+  const views = {dash: viewDash, pre: viewPre, shift: viewShift, bake: viewBake, pos: viewPOS, orders: viewOrders, members: viewMembers, menu: viewMenu, promos: viewPromos, rewards: viewRewards, report: viewReport, shop: viewShop};
   $("#root").innerHTML = `<div class="app">
     <nav class="rail" aria-label="เมนูหลัก">
       <div class="logo" title="${esc(shop().name)}">${BUNNY}</div>
@@ -668,7 +725,7 @@ function draw(){
     </nav>
     <div class="main">${S.readOnlyMsg ? `<div class="notice">${esc(S.readOnlyMsg)}</div>` : ""}${views[S.view]()}</div>
   </div>`;
-  applyDraft(); restore(keepFocus, selS);
+  applyDraft(); paintDiff(); restore(keepFocus, selS);
   if (S.view === "report" && !S.rep.orders && !S.rep.loading) loadReport();
 }
 // Values typed into forms on the page (setup, shop settings) survive re-renders caused by live updates.
@@ -684,7 +741,7 @@ const head = (title, extra = "") => `<div class="topline"><div class="ttl"><h2>$
 const phHTML = (m, cls = "ph") => { const src = itemImg(m); return `<div class="${cls} ${src ? "" : "t-" + esc(m.cat)}">${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : `<span class="ini">${esc(initial(m.name))}</span>`}</div>`; };
 
 /* ---------- POS ---------- */
-const nextQueue = () => S.today.reduce((m,o) => Math.max(m, o.queue || 0), 0) + 1;
+const nextQueue = () => S.today.filter(o => o.day === S.todayKey).reduce((m,o) => Math.max(m, o.queue || 0), 0) + 1;
 const inCart = id => S.cart.filter(l => l.id === id).reduce((s,l) => s + l.qty, 0);
 const availOf = m => { const q = m.trackStock ? stockOf(m.id) : null; return q == null ? Infinity : q - inCart(m.id); };
 function viewPOS(){
@@ -702,7 +759,7 @@ function viewPOS(){
           ${phHTML(m)}${qn ? `<span class="badge-qty">${qn}</span>` : ""}${pr ? `<span class="promo pill peach">${esc(pr.name)}</span>` : ""}
           <div class="body"><span class="plus" aria-hidden="true">+</span><div class="name">${esc(m.name)}</div>
           <div class="meta"><span class="price">${baht(m.price)}</span><span class="stk ${sq != null && sq <= 5 ? "low" : ""}">${sq == null ? "" : sq <= 0 ? "หมด" : "เหลือ " + sq}</span></div></div></button>`; }).join("")}</div>`;
-  return head("ขายหน้าร้าน") + `<section class="pos">
+  return head("ขายหน้าร้าน") + posBanners() + `<section class="pos">
     <div style="min-width:0">
       <div class="searchrow"><input class="input" id="q" type="search" placeholder="ค้นหาเมนู" value="${esc(S.query)}" aria-label="ค้นหาเมนู"></div>
       <div class="filters">${cats.map(c => `<button class="chip" data-cat="${c}" aria-pressed="${S.cat===c}">${c==="all"?"ทั้งหมด":CATS[c]}</button>`).join("")}</div>
@@ -719,7 +776,7 @@ function viewPOS(){
         return `<div class="line"><div><div class="n">${esc(l.name)}</div><div class="o">${[l.opt, l.sweet != null ? "หวาน " + l.sweet : ""].filter(Boolean).map(esc).join(" · ")}${l.opt || l.sweet != null ? " · " : ""}${baht(l.unit)}</div></div>
           <div style="display:flex;align-items:center;gap:10px"><div class="stepper"><button data-dec="${esc(l.key)}" aria-label="ลด">−</button><span>${l.qty}</span><button data-inc="${esc(l.key)}" aria-label="เพิ่ม">+</button></div><b style="min-width:58px;text-align:right">${baht(l.unit*l.qty)}</b></div>
           ${pa ? `<div class="disc">${esc(pa.name)}</div>` : ""}</div>`; }).join("") : `<div class="empty">แตะเมนูเพื่อเพิ่มลงบิล</div>`}</div>
-      ${S.member ? (cm => `<div class="memberbar"><span>${tierPill(cm)} <b>${esc(cm.name || cm.id)}</b> · ใช้ได้ ${Math.max(0, (cm.points || 0) - ptsHeld())} แต้ม</span><span style="display:flex;gap:6px;align-items:center"><button class="btn sm" data-rewardpick>แลกของรางวัล</button><button class="btn sm ghost" data-unmember>เอาออก</button></span></div>`)(curMember()) : ""}
+      ${S.member ? (cm => `<div class="memberbar"><span>${tierPill(cm)}${BBPricing.isBirthMonth(cm) ? ` <span class="pill bday">เดือนเกิด แต้ม x${shop().birthdayMultiplier}</span>` : ""} <b>${esc(cm.name || cm.id)}</b> · ใช้ได้ ${Math.max(0, (cm.points || 0) - ptsHeld())} แต้ม</span><span style="display:flex;gap:6px;align-items:center"><button class="btn sm" data-rewardpick>แลกของรางวัล</button><button class="btn sm ghost" data-unmember>เอาออก</button></span></div>`)(curMember()) : ""}
       <div class="tools">
         <button class="btn sm" data-pickmember>${S.member ? "เปลี่ยนสมาชิก" : "+ สมาชิก"}</button>
         <button class="btn sm" data-coupon>${S.coupon ? "คูปอง " + esc(S.coupon) : "+ คูปอง"}</button>
@@ -735,7 +792,7 @@ function viewPOS(){
         ${P.pointsUsed ? `<div class="row small" style="color:var(--ink)"><span>ตัดแต้มสมาชิก</span><span>−${P.pointsUsed} แต้ม</span></div>` : ""}
         <div class="row big"><span>ยอดชำระ</span><span>${baht(P.total, 1)}</span></div>
       </div>
-      <div class="t-foot"><button class="btn" data-clear>ล้าง</button><button class="btn primary" data-pay ${S.cart.length ? "" : "disabled"}>ชำระเงิน ${S.cart.length ? baht(P.total, 1) : ""}</button></div>
+      <div class="t-foot"><button class="btn" data-clear>ล้าง</button><button class="btn primary" data-pay ${S.cart.length && S.shift ? "" : "disabled"}>${S.shift ? "ชำระเงิน " + (S.cart.length ? baht(P.total, 1) : "") : "เปิดกะก่อนรับเงิน"}</button></div>
     </aside>
     ${S.cart.length && !S.ticketOpen ? `<button class="btn primary cartfab" data-openticket><span>ดูบิล · ${n} ชิ้น</span><b>${baht(P.total, 1)}</b></button>` : ""}
   </section>`;
@@ -905,7 +962,7 @@ function receiptPDF(o){
 function ocard(o){
   const next = {preparing:["ready","ทำเสร็จแล้ว"], ready:["done","ลูกค้ารับแล้ว"]}[o.status];
   return `<div class="ocard ${o.status}">
-    <div class="row"><span class="qno" style="font-size:22px">${q3(o.queue)}</span><span class="small muted">${hm(o.createdAt)} · ${esc(o.staffName || "")}</span></div>
+    <div class="row"><span><span class="qno" style="font-size:22px">${q3(o.queue)}</span>${o.day !== S.todayKey ? ` <span class="pill honey">ค้างจากเมื่อวาน</span>` : ""}</span><span class="small muted">${hm(o.createdAt)} · ${esc(o.staffName || "")}</span></div>
     <ul>${o.items.map(l => `<li>${esc(l.name)}${l.opt ? " · " + esc(l.opt) : ""}${l.sweet != null ? " · หวาน " + esc(l.sweet) : ""} <b>× ${l.qty}</b></li>`).join("")}</ul>
     ${o.note ? `<div class="small" style="color:var(--peach)">หมายเหตุ: ${esc(o.note)}</div>` : ""}
     <div class="f"><span style="display:flex;gap:6px;flex-wrap:wrap"><span class="pill sky">${o.type==="take"?"กลับบ้าน":"ทานที่ร้าน"}</span>
@@ -917,7 +974,7 @@ function ocard(o){
 function viewOrders(){
   const col = (st, title, l) => `<div class="col col-${st}"><div class="col-h"><h3>${title}</h3><span class="pill">${l.length}</span></div>${l.length ? l.map(ocard).join("") : `<div class="empty">ไม่มีออเดอร์</div>`}</div>`;
   const t = S.today;
-  return head("ออเดอร์วันนี้", `<span class="pill">${thDate(Date.now(), {weekday:"long", day:"numeric", month:"long"})}</span>`) + `<section class="board">
+  return head("ออเดอร์วันนี้", `<a class="btn sm" href="/queue" target="_blank" rel="noopener">${svg("tv", 18)} เปิดจอเรียกคิว</a><span class="pill">${thDate(Date.now(), {weekday:"long", day:"numeric", month:"long"})}</span>`) + `<section class="board">
     ${col("preparing", "กำลังทำ", t.filter(o => o.status === "preparing").reverse())}
     ${col("ready", "พร้อมเสิร์ฟ / รอรับ", t.filter(o => o.status === "ready").reverse())}
     ${col("done", "เสร็จแล้ว", t.filter(o => o.status === "done" || o.status === "void"))}</section>`;
@@ -949,7 +1006,7 @@ function viewMembers(){
     <p class="small muted" style="margin:0 0 14px">ทุก ${sh.pointsPer} บาทได้ 1 แต้ม · นำแต้มไปแลกของในตู้ของรางวัลได้ที่ปุ่ม แลกของรางวัล</p>
     <div class="searchrow"><input class="input" id="memQ" type="search" placeholder="ค้นหาชื่อหรือเบอร์โทร" value="${esc(memQ)}"></div>
     <div class="card tbl-wrap"><table><thead><tr><th>สมาชิก</th><th>เบอร์โทร</th><th class="r">แต้ม</th><th class="r">มาแล้ว</th><th class="r">ยอดสะสม</th><th>ล่าสุด</th><th></th></tr></thead><tbody>
-    ${list.length ? list.map(m => `<tr><td><div class="namecell"><span class="av ${avc(m.name)}">${esc(initial(m.name))}</span><div>${esc(m.name || "-")}<div>${tierPill(m)}</div></div></div></td><td>${esc(m.id)}</td>
+    ${list.length ? list.map(m => `<tr><td><div class="namecell"><span class="av ${avc(m.name)}">${esc(initial(m.name))}</span><div>${esc(m.name || "-")}${BBPricing.isBirthMonth(m) ? ` <span class="pill bday">เดือนเกิด</span>` : ""}<div>${tierPill(m)}</div></div></div></td><td>${esc(m.id)}</td>
       <td class="r"><b class="ptsb">${m.points||0}</b></td><td class="r">${m.visits||0} ครั้ง</td><td class="r">${baht(m.spent||0)}</td><td class="small muted">${m.lastVisit ? thDate(m.lastVisit) : "-"}</td>
       <td class="r" style="white-space:nowrap"><button class="btn sm" data-memredeem="${esc(m.id)}">แลกของรางวัล</button> <button class="btn sm ghost" data-memedit="${esc(m.id)}">แก้ไข</button></td></tr>`).join("")
     : `<tr><td colspan="7"><div class="empty">${S.members.length ? "ไม่พบสมาชิกที่ค้นหา" : "ยังไม่มีสมาชิก กด สมัครสมาชิก เพื่อเพิ่มคนแรก"}</div></td></tr>`}</tbody></table></div></section>`;
@@ -959,6 +1016,9 @@ function openMember(id, thenAttach){
   modal(`<div class="mh"><h2>${id ? "แก้ไขสมาชิก" : "สมัครสมาชิก"}</h2><button class="x" data-close aria-label="ปิด">×</button></div>
     <form id="memForm" class="form">
       <div class="field"><label for="mm-phone">เบอร์โทรศัพท์</label><input id="mm-phone" required inputmode="tel" pattern="0[0-9]{8,9}" maxlength="10" value="${esc(m.id || "")}" ${id ? "disabled" : ""}></div>
+      <div class="field"><span class="lab">วันเกิด (ได้แต้ม x${shop().birthdayMultiplier} ตลอดเดือนเกิด)</span><div class="g2">
+        <select id="mm-bd" aria-label="วันที่"><option value="">วันที่</option>${Array.from({length:31}, (_,i) => `<option ${m.birthday && +m.birthday.slice(3) === i+1 ? "selected" : ""}>${i+1}</option>`).join("")}</select>
+        <select id="mm-bm" aria-label="เดือน"><option value="">เดือน</option>${MONTHS.map((n,i) => `<option value="${i+1}" ${m.birthday && +m.birthday.slice(0,2) === i+1 ? "selected" : ""}>${n}</option>`).join("")}</select></div></div>
       <div class="field"><label for="mm-name">ชื่อเล่น</label><input id="mm-name" maxlength="40" value="${esc(m.name || "")}"></div>
       ${id && isMgr() ? `<div class="field"><label for="mm-pts">แต้มสะสม</label><input id="mm-pts" type="number" min="0" value="${m.points||0}"></div>` : ""}
       <div class="err" id="mmErr"></div>
@@ -967,9 +1027,11 @@ function openMember(id, thenAttach){
   $("#memForm").onsubmit = async e => { e.preventDefault();
     const phone = id || $("#mm-phone").value.replace(/\D/g, "");
     if (!/^0\d{8,9}$/.test(phone)) { $("#mmErr").textContent = "เบอร์โทรต้องขึ้นต้นด้วย 0 และมี 9–10 หลัก"; return; }
-    const name = $("#mm-name").value.trim();
-    const r = id ? await store.call("PATCH", "/api/members/" + id, {name, ...(isMgr() ? {points: Math.max(0, Math.floor(+$("#mm-pts").value || 0))} : {})})
-                 : await store.call("POST", "/api/members", {phone, name});
+    const name = $("#mm-name").value.trim(), bd = $("#mm-bd").value, bm = $("#mm-bm").value;
+    if (!!bd !== !!bm) { $("#mmErr").textContent = "เลือกวันเกิดให้ครบทั้งวันที่และเดือน"; return; }
+    const birthday = bd ? String(bm).padStart(2, "0") + "-" + String(bd).padStart(2, "0") : "";
+    const r = id ? await store.call("PATCH", "/api/members/" + id, {name, birthday, ...(isMgr() ? {points: Math.max(0, Math.floor(+$("#mm-pts").value || 0))} : {})})
+                 : await store.call("POST", "/api/members", {phone, name, birthday});
     if (!r) return;
     closeModal(); toast(id ? "บันทึกแล้ว" : "สมัครสมาชิกแล้ว");
     if (thenAttach && r.member) { S.members = [r.member, ...S.members.filter(x => x.id !== r.member.id)]; S.member = r.member; render(); }
@@ -1214,7 +1276,7 @@ function promoDesc(p){
 }
 function promoState(p){ if (p.active === false) return ["ปิดอยู่", ""]; const k = dayKey(Date.now()); if (p.to && k > p.to) return ["หมดอายุ", "rose"]; if (p.from && k < p.from) return ["ยังไม่เริ่ม", "honey"]; return promoLive(p) ? ["ใช้งานอยู่ตอนนี้", "green"] : ["นอกช่วงเวลา", "honey"]; }
 function viewPromos(){
-  return head("โปรโมชั่น", `<button class="btn primary" data-promoedit="">+ สร้างโปรโมชั่น</button>`) + `<section>
+  return head("โปรโมชั่น", `<button class="btn" data-promotemplate>+ โปรใกล้ปิดร้าน</button><button class="btn primary" data-promoedit="">+ สร้างโปรโมชั่น</button>`) + `<section>
     <p class="small muted" style="margin:-8px 0 14px">โปรที่ไม่มีโค้ดใช้อัตโนมัติเมื่อเข้าเงื่อนไข แต่ละรายการรับโปรที่คุ้มสุดได้ 1 โปร และโปรยอดครบใช้ซ้อนได้อีก 1 โปร</p>
     <div class="list">${S.promos.length ? S.promos.slice().sort((a,b) => (b.active!==false) - (a.active!==false)).map(p => { const d = promoDesc(p), [st, c] = promoState(p);
       return `<div class="card pcard"><div class="h"><div><h3>${esc(p.name)}</h3><span class="small muted">${PROMO_T[p.type]}</span></div><span class="pill ${c}">${st}</span></div>
@@ -1279,8 +1341,8 @@ async function loadReport(){
   const [a, b] = rangeFor(S.rep.range); S.rep.from = a; S.rep.to = b;
   const keys = []; for (let d = fromKey(a); dayKey(d) <= b && keys.length < 366; d.setDate(d.getDate() + 1)) keys.push(dayKey(d));
   S.rep.loading = true; S.rep.orders = null; render();
-  try { S.rep.orders = await store.getRange(a, keys[keys.length - 1] || a); }
-  catch (e) { S.rep.orders = []; toast(e.message); }
+  try { const r = await store.getRange(a, keys[keys.length - 1] || a); S.rep.orders = r.orders; S.rep.pre = r.preorderPayments || []; S.rep.waste = r.waste || []; }
+  catch (e) { S.rep.orders = []; S.rep.pre = []; S.rep.waste = []; toast(e.message); }
   S.rep.keys = keys; S.rep.loading = false; render();
 }
 function summarize(orders, keys){
@@ -1333,6 +1395,7 @@ function viewReport(){
       <div style="display:grid;gap:16px;align-content:start;min-width:0">
         <div class="card panel"><h3>เมนูขายดี</h3><div class="rank">${items.length ? items.map(([n,a]) => `<div class="it"><span>${esc(n)}</span><span>${a.q} ชิ้น · ${baht(a.v)}</span><div class="track"><i style="width:${a.q / im * 100}%"></i></div></div>`).join("") : `<div class="empty">ยังไม่มียอดขายในช่วงนี้</div>`}</div></div>
         <div class="card panel"><h3>โปรโมชั่นที่ถูกใช้</h3>${Object.keys(X.byPromo).length ? Object.entries(X.byPromo).map(([n,a]) => `<div class="row small"><span>${esc(n)} · ${a.n} บิล</span><b>−${baht(a.v)}</b></div>`).join("") : `<div class="small muted">ไม่มีการใช้โปรในช่วงนี้</div>`}</div>
+        ${repExtras()}
         <div class="card panel"><h3>ยอดขายตามพนักงาน</h3>${Object.entries(X.byStaff).map(([n,a]) => `<div class="row small"><span>${esc(n)} · ${a.n} บิล</span><b>${baht(a.v)}</b></div>`).join("") || `<div class="small muted">-</div>`}</div>
       </div>
     </div></section>`;
@@ -1390,12 +1453,16 @@ function viewShop(){
       <div class="field"><label for="s-foot">ข้อความท้ายใบเสร็จ</label><input id="s-foot" maxlength="80" value="${esc(sh.footer)}"></div>
       <h3>แต้มสมาชิก</h3>
       <div class="g2"><div class="field"><label for="s-pper">ทุกกี่บาทได้ 1 แต้ม</label><input id="s-pper" type="number" min="1" value="${sh.pointsPer}"></div>
-        <div class="field"><span class="lab">ของรางวัลที่ใช้แลกแต้ม</span><button type="button" class="btn" data-nav="rewards">จัดการตู้ของรางวัล</button></div></div>
+        <div class="field"><label for="s-bmul">ตัวคูณแต้มเดือนเกิด</label><input id="s-bmul" type="number" min="1" max="5" value="${sh.birthdayMultiplier}"></div></div>
+      <h3>การทำงานของร้าน</h3>
+      <div class="g2"><div class="field"><label for="s-dsh">เริ่มวันใหม่เวลา (เลขคิวกลับเป็น #001)</label><select id="s-dsh">${[0,1,2,3,4,5,6].map(h => `<option value="${h}" ${+sh.dayStartHour === h ? "selected" : ""}>${String(h).padStart(2,"0")}:00 น.${h ? " (ร้านเปิดเลยเที่ยงคืน)" : " (เที่ยงคืน)"}</option>`).join("")}</select></div>
+        <div class="field"><label for="s-low">เตือนสต็อกใกล้หมดเมื่อเหลือไม่เกิน</label><input id="s-low" type="number" min="0" max="999" value="${sh.lowStockAt}"></div></div>
       <div class="actions"><button class="btn primary">บันทึกข้อมูลร้าน</button></div></form>
     <div class="card panel"><div class="row"><h3>พนักงาน</h3><button class="btn sm primary" data-staffedit="">+ เพิ่มพนักงาน</button></div>
       <p class="small muted" style="margin:0">พนักงานเลือกชื่อแล้วใส่ PIN เพื่อเข้ากะ ทุกบิลจะบันทึกชื่อคนขาย แคชเชียร์เข้าได้เฉพาะหน้าขาย ออเดอร์ และสมาชิก</p>
       ${S.staff.map(s => `<div class="row" style="padding:8px 0;border-bottom:1px solid var(--line)"><span class="namecell"><span class="av ${avc(s.name)}">${esc(initial(s.name))}</span><span>${esc(s.name)}<br><span class="small muted">${s.role==="manager"?"ผู้จัดการ":"แคชเชียร์"}${s.active===false?" · ปิดใช้งาน":""}</span></span></span><button class="btn sm ghost" data-staffedit="${esc(s.id)}">แก้ไข</button></div>`).join("")}
-    </div></section>`;
+    </div>
+    ${backupPanel()}${linePanel()}</section>`;
 }
 function openStaff(id){
   const s = S.staff.find(x => x.id === id) || {role:"cashier", active:true};
@@ -1420,6 +1487,345 @@ function openStaff(id){
       try { await api.req("DELETE", "/api/staff/" + id); store.soon(); closeModal(); toast("ลบพนักงานแล้ว"); }
       catch (err) { $("#stErr").textContent = err.message; } }; });
 }
+
+/* ================= shifts, pre-orders, bake plan, dashboard, backups, LINE ================= */
+const MONTHS = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+const DENOMS = [1000, 500, 100, 50, 20, 10, 5, 2, 1];
+const money2 = n => Number(n || 0).toLocaleString("th-TH", {minimumFractionDigits:2, maximumFractionDigits:2});
+const pct = (a, b) => !b ? "" : (d => `<span class="vs ${d >= 0 ? "up" : "down"}">${d >= 0 ? "+" : ""}${d.toFixed(0)}%</span>`)((a - b) / b * 100);
+const addDays = (k, n) => { const d = fromKey(k || dayKey(Date.now())); d.setDate(d.getDate() + n); return dayKey(d); };
+const fmtDay = k => thDate(fromKey(k), {weekday:"short", day:"numeric", month:"short"});
+
+// data a page loads when it opens (and again after live updates while it is open)
+async function viewLoad(v){
+  try {
+    if (v === "dash" && isMgr()) { S.dash = await api.req("GET", "/api/dashboard"); render(); }
+    if (v === "bake") { const [plan, w] = await Promise.all([api.req("GET", "/api/bake-plan"), api.req("GET", "/api/waste")]); S.bake = {plan, waste: w.waste}; render(); }
+    if (v === "shift" && isMgr()) { S.shiftHist = (await api.req("GET", "/api/shifts")).shifts; render(); }
+    if (v === "shop" && isMgr()) { const [b, l] = await Promise.all([api.req("GET", "/api/backups"), api.req("GET", "/api/line")]); S.backups = b.backups; S.line = l.line; render(); }
+  } catch (e) { if (e.status !== 401) toast(e.message); }
+}
+
+/* ---------- sale screen banners ---------- */
+function posBanners(){
+  const out = [];
+  if (!S.shift) out.push(`<div class="banner warn"><b>ยังไม่ได้เปิดกะ</b><span>เปิดกะและใส่เงินทอนตั้งต้นก่อนเริ่มรับเงิน</span><button class="btn sm primary" data-nav="shift">ไปเปิดกะ</button></div>`);
+  const now = new Date(), mins = t => { const [h, m] = t.split(":").map(Number); return h * 60 + m; }, cur = now.getHours() * 60 + now.getMinutes();
+  for (const p of S.promos.filter(p => p.active !== false && !p.code && p.start && p.end)) {
+    const live = promoLive(p, now), soon = !live && promoLive({...p, start: null, end: null}, now) && mins(p.start) > cur && mins(p.start) - cur <= 60;
+    if (live) { const left = mins(p.end) - cur; out.push(`<div class="banner promo"><span class="pulse"></span><b>${esc(p.name)}</b><span>กำลังลดอยู่ เหลืออีก ${left >= 60 ? Math.floor(left / 60) + " ชม. " : ""}${left % 60} นาที (ถึง ${p.end} น.)</span></div>`); }
+    else if (soon) out.push(`<div class="banner promo"><b>${esc(p.name)}</b><span>จะเริ่มในอีก ${mins(p.start) - cur} นาที (${p.start} น.)</span></div>`);
+  }
+  const dueTomorrow = S.preorders.filter(p => p.pickupDay === addDays(S.todayKey, 1) && ["pending","ready"].includes(p.status)).length;
+  const dueToday = S.preorders.filter(p => p.pickupDay === S.todayKey && ["pending","ready"].includes(p.status)).length;
+  if (dueToday || dueTomorrow) out.push(`<div class="banner warn"><b>ออเดอร์ล่วงหน้า</b><span>${dueToday ? `วันนี้ต้องส่ง ${dueToday} รายการ` : ""}${dueToday && dueTomorrow ? " · " : ""}${dueTomorrow ? `พรุ่งนี้ ${dueTomorrow} รายการ` : ""}</span><button class="btn sm" data-nav="pre">ดูรายการ</button></div>`);
+  return out.join("");
+}
+
+/* ---------- shift & cash drawer ---------- */
+function viewShift(){
+  const s = S.shift;
+  const hist = isMgr() && S.shiftHist ? `<div class="card panel" style="grid-column:1/-1"><h3>ประวัติกะ</h3><div class="tbl-wrap"><table><thead><tr><th>เปิด</th><th>ปิด</th><th class="r">ยอดขาย</th><th class="r">เงินสดที่ควรมี</th><th class="r">นับได้</th><th class="r">ส่วนต่าง</th><th></th></tr></thead><tbody>
+    ${S.shiftHist.filter(x => x.closedAt).map(x => `<tr><td>${thDate(x.openedAt, {day:"numeric", month:"short"})} ${hm(x.openedAt)}<div class="small muted">${esc(x.openedBy)}</div></td><td>${hm(x.closedAt)}<div class="small muted">${esc(x.closedBy || "")}</div></td>
+      <td class="r">${baht(x.summary.sales)}<div class="small muted">${x.summary.bills} บิล</div></td><td class="r">${baht(x.expectedCash, 1)}</td><td class="r">${baht(x.countedCash, 1)}</td>
+      <td class="r"><span class="pill ${x.diff === 0 ? "green" : x.diff < 0 ? "rose" : "honey"}">${x.diff === 0 ? "ตรง" : (x.diff > 0 ? "เกิน " : "ขาด ") + baht(Math.abs(x.diff), 1)}</span></td>
+      <td class="r"><button class="btn sm ghost" data-shiftpdf="${esc(x.id)}">PDF</button></td></tr>`).join("") || `<tr><td colspan="7"><div class="empty">ยังไม่มีกะที่ปิดแล้ว</div></td></tr>`}</tbody></table></div></div>` : "";
+  if (!s) return head("กะ & ลิ้นชักเงิน") + `<section class="grid2">
+    <form id="openShiftForm" class="card panel form"><h3>เปิดกะใหม่</h3>
+      <p class="small muted" style="margin:0">นับเงินทอนที่ใส่ไว้ในลิ้นชักตอนเริ่มกะ ระบบจะใช้เป็นจุดตั้งต้นในการคำนวณเงินสดที่ควรมีตอนปิดกะ</p>
+      <div class="field"><label for="os-cash">เงินทอนตั้งต้น (บาท)</label><input id="os-cash" type="number" min="0" step="1" value="1000" inputmode="numeric"></div>
+      <button class="btn primary" style="min-height:48px">เปิดกะและเริ่มขาย</button></form>${hist}</section>`;
+  const x = s.summary;
+  return head("กะ & ลิ้นชักเงิน", `<span class="pill green">กะเปิดอยู่ · ${hm(s.openedAt)} โดย ${esc(s.openedBy)}</span>`) + `<section class="grid2">
+    <div class="card panel"><h3>เงินสดที่ควรมีในลิ้นชักตอนนี้</h3><div class="bigcash">${baht(s.expectedCash, 1)}</div>
+      <div class="stat">
+        <div><div class="l">เงินทอนตั้งต้น</div><div class="v">${baht(s.openingCash)}</div></div>
+        <div><div class="l">ขายเงินสด</div><div class="v">${baht(x.byPay.cash)}</div></div>
+        <div><div class="l">รับเงินล่วงหน้า (สด)</div><div class="v">${baht(x.preorder.cash)}</div></div>
+        <div><div class="l">เงินเข้า / ออก</div><div class="v">+${baht(x.cashIn)} / −${baht(x.cashOut)}</div></div>
+      </div>
+      <h3>ยอดขายกะนี้ ${baht(x.sales)} <span class="small muted">${x.bills} บิล${x.voids ? ` · ยกเลิก ${x.voids}` : ""}</span></h3>
+      <div class="legend"><span style="--c:var(--honey)">เงินสด <b style="color:var(--fg)">${baht(x.byPay.cash)}</b></span><span style="--c:var(--sky)">พร้อมเพย์ <b style="color:var(--fg)">${baht(x.byPay.qr + x.preorder.qr)}</b></span><span style="--c:var(--peach)">บัตร <b style="color:var(--fg)">${baht(x.byPay.card + x.preorder.card)}</b></span></div>
+      <h3>เงินเข้า-ออกลิ้นชัก</h3>
+      ${x.moves.length ? x.moves.map(m => `<div class="row small" style="padding:6px 0;border-bottom:1px dashed var(--line)"><span>${hm(m.createdAt)} · ${esc(m.reason)} · ${esc(m.staffName || "")}</span><b style="color:${m.kind === "in" ? "var(--accent-ink)" : "var(--rose)"}">${m.kind === "in" ? "+" : "−"}${baht(m.amount, 1)}</b></div>`).join("") : `<div class="small muted">ยังไม่มีรายการ</div>`}
+      <form id="moveForm" class="g3" style="align-items:end"><div class="field"><label for="mv-kind">ประเภท</label><select id="mv-kind"><option value="out">เงินออก (เช่น ซื้อน้ำแข็ง)</option><option value="in">เงินเข้า (เช่น แลกเหรียญ)</option></select></div>
+        <div class="field"><label for="mv-amt">จำนวน</label><input id="mv-amt" type="number" min="1" required inputmode="decimal"></div>
+        <div class="field"><label for="mv-why">เหตุผล</label><input id="mv-why" maxlength="80" required></div><button class="btn" style="grid-column:1/-1">บันทึกเงินเข้า-ออก</button></form>
+    </div>
+    <form id="closeShiftForm" class="card panel form"><h3>ปิดกะ: นับเงินในลิ้นชัก</h3>
+      <div class="denoms">${DENOMS.map(d => `<label><b>${d >= 20 ? d.toLocaleString("th-TH") : d + " ฿"}</b><input type="number" min="0" step="1" id="dn-${d}" data-denom="${d}" placeholder="0" inputmode="numeric" aria-label="จำนวน ${d} บาท"></label>`).join("")}</div>
+      <div class="diff ok" id="cashDiff"></div>
+      <div class="field"><label for="cs-note">หมายเหตุ</label><input id="cs-note" maxlength="200" placeholder="เช่น ทอนเงินผิด 20 บาท"></div>
+      <button class="btn primary" style="min-height:48px">ปิดกะ</button>
+      <p class="small muted" style="margin:0">หลังปิดกะ จะขายต่อไม่ได้จนกว่าจะเปิดกะใหม่ ${N_LINE()}</p></form>
+    ${hist}</section>`;
+}
+const N_LINE = () => S.line?.enabled ? "ระบบจะส่งสรุปเข้า LINE ให้" : "";
+function countedTotal(){ return DENOMS.reduce((t, d) => t + d * (Math.max(0, Math.floor(+document.getElementById("dn-" + d)?.value || 0))), 0); }
+function paintDiff(){
+  const el = $("#cashDiff"); if (!el || !S.shift) return;
+  const c = countedTotal(), d = r2(c - S.shift.expectedCash);
+  el.className = "diff " + (d === 0 ? "ok" : d < 0 ? "bad" : "over");
+  el.innerHTML = `<span>นับได้ ${baht(c)}</span><span>${d === 0 ? "ตรงพอดี" : d < 0 ? "ขาด " + baht(-d, 1) : "เกิน " + baht(d, 1)}</span>`;
+}
+document.addEventListener("input", e => { if (e.target.dataset?.denom) paintDiff(); });
+function shiftSlip(s){
+  const x = s.summary, sh = shop(), row = (a, b) => `<div class="row"><span>${a}</span><span>${b}</span></div>`;
+  return `<div class="receipt"><div class="c" style="font-weight:600;font-size:15px">${esc(sh.name)}</div><div class="c">สรุปกะ</div><hr>
+    ${row("เปิด", thDate(s.openedAt) + " " + hm(s.openedAt) + " · " + esc(s.openedBy))}${row("ปิด", s.closedAt ? thDate(s.closedAt) + " " + hm(s.closedAt) + " · " + esc(s.closedBy) : "-")}<hr>
+    ${row("จำนวนบิล", x.bills)}${row("ยอดขาย", money2(x.sales))}${row("· เงินสด", money2(x.byPay.cash))}${row("· พร้อมเพย์", money2(x.byPay.qr))}${row("· บัตร", money2(x.byPay.card))}
+    ${x.voids ? row("ยกเลิก " + x.voids + " บิล", money2(x.voidTotal)) : ""}${row("รับเงินล่วงหน้า (สด)", money2(x.preorder.cash))}${row("รับเงินล่วงหน้า (โอน/บัตร)", money2(x.preorder.qr + x.preorder.card))}<hr>
+    ${row("เงินทอนตั้งต้น", money2(s.openingCash))}${row("เงินเข้า", money2(x.cashIn))}${row("เงินออก", "-" + money2(x.cashOut))}
+    <div class="row" style="font-weight:700"><span>เงินสดที่ควรมี</span><span>${money2(s.expectedCash)}</span></div>
+    ${s.closedAt ? row("นับได้จริง", money2(s.countedCash)) + `<div class="row" style="font-weight:700"><span>ส่วนต่าง</span><span>${s.diff > 0 ? "+" : ""}${money2(s.diff)}</span></div>` : ""}
+    ${s.counts ? "<hr>" + Object.entries(s.counts).sort((a, b) => b[0] - a[0]).map(([d, n]) => row(d + " × " + n, money2(d * n))).join("") : ""}
+    ${s.note ? `<hr><div>หมายเหตุ: ${esc(s.note)}</div>` : ""}<hr><div class="c">ลงชื่อ ...........................</div></div>`;
+}
+const shiftPDF = s => elementToPDF(`<div style="font-family:${getComputedStyle(document.body).fontFamily};padding:8px">${shiftSlip(s).replace('class="receipt"', 'class="receipt" style="max-width:none;border:0"')}</div>`, 302, `shift-${dayKey(s.openedAt)}-${hm(s.openedAt).replace(":", "")}.pdf`, "80mm");
+
+/* ---------- pre-orders ---------- */
+const PRE_ST = {pending: ["รอทำ", "honey"], ready: ["ทำเสร็จ รอรับ", "green"], picked: ["รับแล้ว", ""], cancelled: ["ยกเลิก", "rose"]};
+function viewPre(){
+  const open = S.preorders.filter(p => ["pending","ready"].includes(p.status));
+  const days = Array.from({length: 14}, (_, i) => addDays(S.todayKey, i));
+  const count = k => open.filter(p => p.pickupDay === k).length;
+  const overdue = open.filter(p => p.pickupDay < S.todayKey);
+  const sel = S.preDay;
+  const shown = sel === "all" ? open : sel === "done" ? S.preorders.filter(p => !["pending","ready"].includes(p.status)) : S.preorders.filter(p => p.pickupDay === sel);
+  const groups = {}; shown.forEach(p => (groups[p.pickupDay] ||= []).push(p));
+  return head("ออเดอร์ล่วงหน้า", `<button class="btn primary" data-preedit="">+ รับออเดอร์ล่วงหน้า</button>`) + `<section>
+    ${overdue.length ? `<div class="banner warn"><b>เลยวันรับแล้ว ${overdue.length} รายการ</b><span>${overdue.map(p => esc(p.code + " " + p.customer)).join(", ")}</span></div>` : ""}
+    <div class="days"><button data-preday="all" aria-pressed="${sel === "all"}"><small>ทั้งหมด</small><b>${open.length}</b><i>รอส่ง</i></button>
+      ${days.map((k, i) => `<button data-preday="${k}" aria-pressed="${sel === k}"><small>${i === 0 ? "วันนี้" : i === 1 ? "พรุ่งนี้" : thDate(fromKey(k), {weekday:"short"})}</small><b>${fromKey(k).getDate()}</b><i>${count(k) || ""}</i></button>`).join("")}
+      <button data-preday="done" aria-pressed="${sel === "done"}"><small>ปิดแล้ว</small><b>✓</b><i></i></button></div>
+    ${Object.keys(groups).sort().map(k => `<div class="daygroup"><h3>${k === S.todayKey ? "วันนี้ · " : ""}${fmtDay(k)}</h3>${groups[k].sort((a, b) => (a.pickupTime || "").localeCompare(b.pickupTime || "")).map(preCard).join("")}</div>`).join("")
+      || `<div class="empty card">${sel === "all" ? "ยังไม่มีออเดอร์ล่วงหน้า กด รับออเดอร์ล่วงหน้า เพื่อเริ่ม" : "ไม่มีออเดอร์ในวันนี้"}</div>`}
+  </section>`;
+}
+function preCard(p){
+  const [st, c] = PRE_ST[p.status], openP = ["pending","ready"].includes(p.status);
+  return `<div class="card pre ${p.status}"><div class="h"><div><span class="small muted">${esc(p.code)} · รับ ${p.pickupTime ? p.pickupTime + " น." : "ไม่ระบุเวลา"}</span><h3>${esc(p.title)}${p.qty > 1 ? " ×" + p.qty : ""}</h3></div><span class="pill ${c}">${st}</span></div>
+    ${p.message ? `<div class="msg">“${esc(p.message)}”</div>` : ""}${p.details ? `<div class="small">${esc(p.details)}</div>` : ""}
+    <div class="small">${esc(p.customer)}${p.phone ? " · " + esc(p.phone) : ""}${p.note ? " · " + esc(p.note) : ""}</div>
+    <div class="money"><span>ราคา <b>${baht(p.total)}</b></span><span>จ่ายแล้ว <b>${baht(p.paid)}</b></span>${p.balance ? `<span style="color:var(--rose)">ค้างจ่าย <b>${baht(p.balance)}</b></span>` : `<span class="pill green">จ่ายครบ</span>`}</div>
+    <div class="acts"><button class="btn sm ghost" data-preslip="${esc(p.id)}">ใบรับออเดอร์ PDF</button>
+      ${openP ? `<button class="btn sm ghost" data-precancel="${esc(p.id)}">ยกเลิก</button><button class="btn sm" data-preedit="${esc(p.id)}">แก้ไข</button>` : ""}
+      ${p.status === "pending" ? `<button class="btn sm" data-preready="${esc(p.id)}">ทำเสร็จแล้ว</button>` : ""}
+      ${openP ? `<button class="btn sm primary" data-prepick="${esc(p.id)}">ลูกค้ารับของ${p.balance ? " · เก็บ " + baht(p.balance) : ""}</button>` : ""}</div></div>`;
+}
+function openPreForm(id){
+  const p = S.preorders.find(x => x.id === id) || {qty: 1, pickupDay: addDays(S.todayKey, 1), total: "", deposit: ""};
+  modal(`<div class="mh"><h2>${id ? "แก้ไข " + esc(p.code) : "รับออเดอร์ล่วงหน้า"}</h2><button class="x" data-close aria-label="ปิด">×</button></div>
+    <form id="preForm" class="form">
+      <div class="g2"><div class="field"><label for="pf-cus">ชื่อลูกค้า</label><input id="pf-cus" required maxlength="50" value="${esc(p.customer || "")}"></div>
+        <div class="field"><label for="pf-phone">เบอร์โทร</label><input id="pf-phone" inputmode="tel" maxlength="10" value="${esc(p.phone || "")}"></div></div>
+      <div class="g2"><div class="field"><label for="pf-day">วันรับของ</label><input id="pf-day" type="date" required value="${esc(p.pickupDay)}" min="${S.todayKey}"></div>
+        <div class="field"><label for="pf-time">เวลารับ</label><input id="pf-time" type="time" value="${esc(p.pickupTime || "")}"></div></div>
+      <div class="field"><label for="pf-title">สั่งอะไร</label><input id="pf-title" required maxlength="80" list="pf-menu" value="${esc(p.title || "")}" placeholder="เช่น เค้กช็อกโกแลต 2 ปอนด์"><datalist id="pf-menu">${S.menu.map(m => `<option value="${esc(m.name)}">`).join("")}</datalist></div>
+      <div class="field"><label for="pf-msg">ข้อความบนเค้ก</label><input id="pf-msg" maxlength="80" value="${esc(p.message || "")}" placeholder="เช่น Happy Birthday น้องเมย์"></div>
+      <div class="field"><label for="pf-det">รายละเอียด (รสชาติ ขนาด สี เทียน)</label><textarea id="pf-det" rows="2" maxlength="300">${esc(p.details || "")}</textarea></div>
+      <div class="g3"><div class="field"><label for="pf-qty">จำนวน</label><input id="pf-qty" type="number" min="1" value="${p.qty}"></div>
+        <div class="field"><label for="pf-total">ราคารวม (บาท)</label><input id="pf-total" type="number" min="0" required value="${p.total}"></div>
+        ${id ? `<div class="field"><span class="lab">จ่ายแล้ว</span><b style="padding-top:8px">${baht(p.paid)}</b></div>` : `<div class="field"><label for="pf-dep">มัดจำ (บาท)</label><input id="pf-dep" type="number" min="0" value=""></div>`}</div>
+      ${id ? "" : `<div class="field"><span class="lab">รับมัดจำด้วย</span><div class="opts" id="pf-pay">${Object.entries(PAY).map(([k, v], i) => `<button type="button" data-pfpay="${k}" aria-pressed="${i === 0}">${v}</button>`).join("")}</div></div>
+      ${!S.shift ? `<p class="small" style="color:var(--rose);margin:0">ยังไม่ได้เปิดกะ จะรับมัดจำไม่ได้ (บันทึกออเดอร์แบบยังไม่มัดจำได้)</p>` : ""}`}
+      <div class="field"><label for="pf-note">หมายเหตุ</label><input id="pf-note" maxlength="200" value="${esc(p.note || "")}"></div>
+      <div class="err" id="pfErr"></div>
+      <div class="actions"><button type="button" class="btn" data-close>ยกเลิก</button><button class="btn primary">${id ? "บันทึก" : "บันทึกออเดอร์"}</button></div>
+    </form>`, "wide");
+  let pay = "cash";
+  $("#pf-pay") && ($("#pf-pay").onclick = e => { const b = e.target.closest("[data-pfpay]"); if (!b) return; pay = b.dataset.pfpay; $$("#pf-pay button").forEach(x => x.setAttribute("aria-pressed", x === b)); });
+  $("#preForm").onsubmit = async e => { e.preventDefault();
+    const v = k => $("#" + k)?.value.trim();
+    const body = {customer: v("pf-cus"), phone: v("pf-phone"), pickupDay: v("pf-day"), pickupTime: v("pf-time"), title: v("pf-title"), message: v("pf-msg"), details: v("pf-det"),
+      qty: +v("pf-qty") || 1, total: +v("pf-total") || 0, note: v("pf-note")};
+    if (!id) { body.deposit = +v("pf-dep") || 0; body.pay = pay; }
+    try { const r = await api.req(id ? "PATCH" : "POST", id ? "/api/preorders/" + id : "/api/preorders", body); store.soon(); closeModal(); toast(id ? "บันทึกแล้ว" : "รับออเดอร์ " + r.preorder.code + " แล้ว"); if (!id) preSlip(r.preorder); }
+    catch (err) { $("#pfErr").textContent = err.message; } };
+}
+function openPickup(p){
+  let pay = "cash";
+  const paint = () => {
+    modal(`<div class="mh"><h2>รับของ ${esc(p.code)}</h2><button class="x" data-close aria-label="ปิด">×</button></div>
+      <div><b>${esc(p.title)}${p.qty > 1 ? " ×" + p.qty : ""}</b><div class="small muted">${esc(p.customer)} · ราคา ${baht(p.total)} · จ่ายแล้ว ${baht(p.paid)}</div></div>
+      ${p.balance ? `<div class="row big"><span>เก็บเงินเพิ่ม</span><span>${baht(p.balance, 1)}</span></div>
+        <div class="paym">${Object.entries(PAY).map(([k, v]) => `<button data-pkpay="${k}" aria-pressed="${pay === k}">${svg(k, 24)}${v}</button>`).join("")}</div>
+        ${pay === "cash" ? `<div class="field"><label for="pk-cash">รับเงินมา</label><input id="pk-cash" type="number" min="0" value="${Math.ceil(p.balance)}"></div>` : `<div class="field"><label for="pk-ref">เลขอ้างอิง (ไม่บังคับ)</label><input id="pk-ref" maxlength="40"></div>`}
+        ${!S.shift ? `<p class="small" style="color:var(--rose);margin:0">ต้องเปิดกะก่อนรับเงิน</p>` : ""}` : `<div class="diff ok"><span>จ่ายครบแล้ว</span><span>ส่งของได้เลย</span></div>`}
+      <div class="err" id="pkErr"></div>
+      <div class="actions"><button class="btn" data-close>ยกเลิก</button><button class="btn primary" id="pkYes">ยืนยันลูกค้ารับของ</button></div>`, "", false);
+    $("#modalRoot").onclick = e => { const b = e.target.closest("[data-pkpay]"); if (b) { pay = b.dataset.pkpay; paint(); } };
+    $("#pkYes").onclick = async () => {
+      try { const r = await api.req("POST", `/api/preorders/${p.id}/pickup`, {pay, tendered: +($("#pk-cash")?.value || 0), ref: $("#pk-ref")?.value || ""}); store.soon(); closeModal(); toast(r.change ? `รับของแล้ว ทอนเงิน ${baht(r.change, 1)}` : "รับของเรียบร้อย"); }
+      catch (err) { $("#pkErr").textContent = err.message; } };
+  };
+  paint();
+}
+function openPreCancel(p){
+  modal(`<div class="mh"><h2>ยกเลิก ${esc(p.code)}</h2><button class="x" data-close aria-label="ปิด">×</button></div>
+    <p style="margin:0">${esc(p.title)} ของ ${esc(p.customer)} · จ่ายแล้ว ${baht(p.paid)}</p>
+    <div class="field"><label for="pc-why">เหตุผล</label><input id="pc-why" maxlength="80"></div>
+    ${p.paid ? `<label class="check"><input type="checkbox" id="pc-refund"> คืนมัดจำ ${baht(p.paid)} ให้ลูกค้า</label>
+      <div class="field"><label for="pc-pay">คืนด้วย</label><select id="pc-pay">${Object.entries(PAY).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></div>` : ""}
+    <div class="err" id="pcErr"></div>
+    <div class="actions"><button class="btn" data-close>ไม่ยกเลิก</button><button class="btn danger" id="pcYes">ยืนยันยกเลิก</button></div>`);
+  $("#pcYes").onclick = async () => {
+    try { await api.req("POST", `/api/preorders/${p.id}/cancel`, {reason: $("#pc-why").value, refund: !!$("#pc-refund")?.checked, pay: $("#pc-pay")?.value || "cash"}); store.soon(); closeModal(); toast("ยกเลิกออเดอร์แล้ว"); }
+    catch (err) { $("#pcErr").textContent = err.message; } };
+}
+function preSlip(p){
+  const sh = shop(), row = (a, b) => `<div class="row"><span>${a}</span><span>${b}</span></div>`;
+  const html = `<div class="receipt" style="max-width:none;border:0"><div class="c" style="font-weight:600;font-size:15px">${esc(sh.name)}</div>${sh.phone ? `<div class="c">โทร ${esc(sh.phone)}</div>` : ""}
+    <div class="c">ใบรับออเดอร์ล่วงหน้า</div><div class="c" style="font-size:20px;margin:4px 0">${esc(p.code)}</div><hr>
+    ${row("ลูกค้า", esc(p.customer))}${p.phone ? row("โทร", esc(p.phone)) : ""}${row("วันรับ", fmtDay(p.pickupDay) + (p.pickupTime ? " " + p.pickupTime + " น." : ""))}<hr>
+    <div style="font-weight:600">${esc(p.title)}${p.qty > 1 ? " ×" + p.qty : ""}</div>${p.message ? `<div>ข้อความ: “${esc(p.message)}”</div>` : ""}${p.details ? `<div>${esc(p.details)}</div>` : ""}<hr>
+    ${row("ราคารวม", money2(p.total))}${p.payments.map(x => row(x.kind === "deposit" ? "มัดจำ (" + PAY[x.pay] + ")" : x.kind === "balance" ? "ชำระส่วนที่เหลือ" : "คืนเงิน", money2(x.amount))).join("")}
+    <div class="row" style="font-weight:700"><span>ค้างจ่าย</span><span>${money2(p.balance)}</span></div><hr><div class="c">กรุณานำใบนี้มาตอนรับของ</div></div>`;
+  elementToPDF(`<div style="font-family:${getComputedStyle(document.body).fontFamily};padding:8px">${html}</div>`, 302, `preorder-${p.code}.pdf`, "80mm");
+}
+
+/* ---------- waste & bake plan ---------- */
+function viewBake(){
+  const B = S.bake;
+  if (!B) return head("แผนอบ & ของเหลือ") + `<div class="empty">กำลังคำนวณ…</div>`;
+  const items = S.menu.filter(m => m.trackStock && m.active !== false);
+  const wTotal = B.waste.reduce((a, w) => a + w.value, 0);
+  return head("แผนอบ & ของเหลือ") + `<section class="grid2">
+    <form id="wasteForm" class="card panel form"><h3>ปิดร้าน: ขนมที่ต้องทิ้ง</h3>
+      <p class="small muted" style="margin:0">ใส่เฉพาะชิ้นที่ทิ้งหรือขายไม่ได้แล้ว ที่เหลือจะยกยอดเป็นสต็อกของพรุ่งนี้อัตโนมัติ</p>
+      <div class="tbl-wrap"><table style="min-width:0"><thead><tr><th>เมนู</th><th class="r">เหลือบนชั้น</th><th class="r">ทิ้ง</th></tr></thead><tbody>
+        ${items.map(m => `<tr><td><div class="namecell">${phHTML(m, "thumb")}${esc(m.name)}</div></td><td class="r">${stockOf(m.id) ?? 0}</td><td class="r"><input class="input wq" type="number" min="0" max="${stockOf(m.id) ?? 0}" id="wq-${esc(m.id)}" data-wq="${esc(m.id)}" placeholder="0" aria-label="ทิ้ง ${esc(m.name)}"></td></tr>`).join("")}
+      </tbody></table></div>
+      <div class="field"><label for="w-why">เหตุผล</label><select id="w-why"><option>หมดอายุ / ค้างคืนไม่ได้</option><option>เสียหายระหว่างขาย</option><option>อบไม่ผ่าน</option><option>อื่น ๆ</option></select></div>
+      <button class="btn primary">บันทึกของที่ทิ้ง</button>
+      <h3>ทิ้งไปแล้ววันนี้ ${B.waste.length ? `<span class="pill rose">มูลค่า ${baht(wTotal)}</span>` : ""}</h3>
+      ${B.waste.length ? B.waste.map(w => `<div class="row small" style="padding:6px 0;border-bottom:1px dashed var(--line)"><span>${hm(w.createdAt)} · ${esc(w.name)} ×${w.qty} · ${esc(w.reason)}</span><span>${baht(w.value)}</span></div>`).join("") : `<div class="small muted">ยังไม่มีรายการ</div>`}
+    </form>
+    <div class="card panel"><h3>แผนอบสำหรับ ${fmtDay(B.plan.tomorrow)}</h3>
+      <p class="small muted" style="margin:0">คิดจากยอดขายวันเดียวกันใน 4 สัปดาห์ก่อน (ถ้ามีข้อมูลน้อยใช้ค่าเฉลี่ย 7 วัน) หักของที่มักเหลือทิ้งครึ่งหนึ่ง และหักของที่ยังเหลือบนชั้น</p>
+      <div class="tbl-wrap plan"><table style="min-width:520px"><thead><tr><th>เมนู</th><th class="r">ขายวันนี้</th><th class="r">เฉลี่ย/วัน</th><th class="r">ทิ้งเฉลี่ย</th><th class="r">เหลือ</th><th class="r">ควรอบ</th></tr></thead><tbody>
+        ${B.plan.items.sort((a, b) => b.suggest - a.suggest).map(i => `<tr><td>${esc(i.name)}</td><td class="r">${i.soldToday}</td><td class="r">${i.avgWeekday ?? i.avg7}${i.basis === "weekday" ? ` <span class="small muted">(วันเดียวกัน)</span>` : ""}</td><td class="r">${i.waste7}</td><td class="r">${i.stock}</td><td class="r big">${i.suggest}</td></tr>`).join("")}
+      </tbody></table></div>
+      <button class="btn" data-bakepdf>ดาวน์โหลดแผนอบ PDF</button>
+    </div></section>`;
+}
+function bakeSheet(B){
+  const td = 'style="padding:7px 8px;border-bottom:1px solid #F3DCE5"', tdr = 'style="padding:7px 8px;border-bottom:1px solid #F3DCE5;text-align:right"';
+  return `<div style="font-family:${getComputedStyle(document.body).fontFamily};color:#2c2522;padding:40px 44px;font-size:14px">
+    <div style="font-family:Mitr,sans-serif;font-size:22px;border-bottom:2px solid #C8456F;padding-bottom:10px">${esc(shop().name)} · แผนอบ ${fmtDay(B.plan.tomorrow)}</div>
+    <table style="width:100%;border-collapse:collapse;margin-top:14px"><tr>${["เมนู", "เฉลี่ย/วัน", "เหลือบนชั้น", "ควรอบ", "อบจริง"].map((h, i) => `<th style="text-align:${i ? "right" : "left"};padding:7px 8px;background:#FCEEF3">${h}</th>`).join("")}</tr>
+    ${B.plan.items.map(i => `<tr><td ${td}>${esc(i.name)}</td><td ${tdr}>${i.avgWeekday ?? i.avg7}</td><td ${tdr}>${i.stock}</td><td ${tdr}><b>${i.suggest}</b></td><td ${tdr}>________</td></tr>`).join("")}</table>
+    <div style="margin-top:20px;font-size:11px;color:#9A7D88">พิมพ์ ${thDate(Date.now())} ${hm(Date.now())}</div></div>`;
+}
+
+/* ---------- owner dashboard ---------- */
+function viewDash(){
+  const D = S.dash;
+  if (!D) return head("ภาพรวมร้าน") + `<div class="empty">กำลังโหลด…</div>`;
+  const t = D.today, y = D.yesterday, w = D.lastWeek;
+  const max = Math.max(...D.hourly.today, ...D.hourly.yesterday, 1), hours = Array.from({length: 24}, (_, h) => h).filter(h => D.hourly.today[h] || D.hourly.yesterday[h] || (h >= 7 && h <= 20));
+  const kpi = (label, v, a, b, fmt) => `<div class="card kpi"><div class="label">${label}</div><div class="v">${fmt(v)}</div><div class="s">เมื่อวาน ${fmt(a)} ${pct(v, a)} · สัปดาห์ก่อน ${fmt(b)} ${pct(v, b)}</div></div>`;
+  return head("ภาพรวมร้าน", `<span class="pill">${thDate(Date.now(), {weekday:"long", day:"numeric", month:"long"})}</span>`) + `<section>
+    <div class="kpis">${kpi("ยอดขายวันนี้", t.sales, y.sales, w.sales, v => baht(v))}${kpi("จำนวนบิล", t.bills, y.bills, w.bills, v => v)}${kpi("เฉลี่ยต่อบิล", t.avg, y.avg, w.avg, v => baht(v))}
+      <div class="card kpi"><div class="label">รายรับออเดอร์ล่วงหน้า</div><div class="v">${baht(t.preorderIncome)}</div><div class="s">สมาชิกใหม่วันนี้ ${D.newMembers} คน</div></div></div>
+    <div class="panels">
+      <div class="card panel"><h3>ยอดขายรายชั่วโมง <span class="small muted">แท่งชมพู = วันนี้ · แท่งจาง = เมื่อวาน</span></h3>
+        <div class="bars">${hours.map(h => `<div class="bar bar2" title="${h}:00 วันนี้ ${baht(D.hourly.today[h])} · เมื่อวาน ${baht(D.hourly.yesterday[h])}"><b>${D.hourly.today[h] ? Math.round(D.hourly.today[h]) : ""}</b><em style="height:${D.hourly.yesterday[h] / max * 85}%"></em><i class="${D.hourly.today[h] ? "" : "zero"}" style="height:${D.hourly.today[h] ? Math.max(3, D.hourly.today[h] / max * 85) : 1}%"></i></div>`).join("")}</div>
+        <div class="blabels">${hours.map(h => `<span>${h}</span>`).join("")}</div>
+        <h3>เมนูขายดีวันนี้</h3><div class="rank">${D.top.length ? D.top.map(i => `<div class="it"><span>${esc(i.name)}</span><span>${i.qty} ชิ้น · ${baht(i.value)}</span><div class="track"><i style="width:${i.qty / D.top[0].qty * 100}%"></i></div></div>`).join("") : `<div class="small muted">ยังไม่มียอดขายวันนี้</div>`}</div>
+      </div>
+      <div style="display:grid;gap:16px;align-content:start;min-width:0">
+        <div class="card panel"><h3>ลิ้นชักเงิน</h3>${D.shift ? `<div class="bigcash" style="font-size:30px">${baht(D.shift.expectedCash, 1)}</div><div class="small muted">กะเปิดตั้งแต่ ${hm(D.shift.openedAt)} โดย ${esc(D.shift.openedBy)} · ขายกะนี้ ${baht(D.shift.summary.sales)}</div>` : `<div class="small muted">ยังไม่ได้เปิดกะ</div>`}</div>
+        <div class="card panel"><h3>ออเดอร์ล่วงหน้า วันนี้–พรุ่งนี้</h3>${D.preordersDue.length ? D.preordersDue.map(p => `<div class="row small"><span>${p.pickupDay === S.todayKey ? "วันนี้" : "พรุ่งนี้"} ${p.pickupTime || ""} · ${esc(p.title)} · ${esc(p.customer)}</span><span class="pill ${PRE_ST[p.status][1]}">${PRE_ST[p.status][0]}</span></div>`).join("") : `<div class="small muted">ไม่มี</div>`}</div>
+        <div class="card panel"><h3>สต็อกใกล้หมด</h3>${D.lowStock.length ? D.lowStock.map(m => `<div class="row small"><span>${esc(m.name)}</span><b class="stk low">${m.qty}</b></div>`).join("") : `<div class="small muted">สต็อกพอทุกเมนู</div>`}</div>
+        <div class="card panel"><h3>ของเสียเมื่อวาน</h3><div class="small">${D.wasteYesterday.qty ? `${D.wasteYesterday.qty} ชิ้น · มูลค่า <b>${baht(D.wasteYesterday.value)}</b>` : "ไม่มีของทิ้ง"}</div></div>
+      </div></div></section>`;
+}
+
+/* ---------- report extras ---------- */
+function repExtras(){
+  const pre = S.rep.pre || [], w = S.rep.waste || [];
+  const inc = pre.reduce((a, p) => a + p.amount, 0), wv = w.reduce((a, x) => a + x.value, 0);
+  return `<div class="card panel"><h3>ออเดอร์ล่วงหน้า & ของเสีย</h3>
+    <div class="row small"><span>รับเงินออเดอร์ล่วงหน้า ${pre.length} รายการ</span><b>${baht(inc)}</b></div>
+    ${Object.keys(PAY).map(k => { const v = pre.filter(p => p.pay === k).reduce((a, p) => a + p.amount, 0); return v ? `<div class="row small muted"><span>· ${PAY[k]}</span><span>${baht(v)}</span></div>` : ""; }).join("")}
+    <div class="row small"><span>ของทิ้ง ${w.reduce((a, x) => a + x.qty, 0)} ชิ้น</span><b style="color:var(--rose)">${baht(wv)}</b></div></div>`;
+}
+
+/* ---------- backups & LINE (shop page) ---------- */
+function backupPanel(){
+  if (!isMgr()) return "";
+  const list = S.backups;
+  return `<div class="card panel"><div class="row"><h3>สำรองข้อมูลอัตโนมัติ</h3><button class="btn sm primary" data-backupnow>สำรองตอนนี้</button></div>
+    <p class="small muted" style="margin:0">ระบบสำรองฐานข้อมูลให้เองทุกคืนตอนตี 3 (และตอนเปิดเซิร์ฟเวอร์ถ้าเกิน 1 วัน) เก็บย้อนหลัง 30 ชุดในโฟลเดอร์ <code>data/backups</code></p>
+    ${list == null ? `<div class="small muted">กำลังโหลด…</div>` : list.length ? list.slice(0, 8).map(b => `<div class="row small" style="padding:6px 0;border-bottom:1px dashed var(--line)"><span>${thDate(b.createdAt)} ${hm(b.createdAt)} · ${(b.size / 1024 / 1024).toFixed(2)} MB</span><button class="btn sm ghost" data-backupdl="${esc(b.name)}">ดาวน์โหลด</button></div>`).join("") + (list.length > 8 ? `<div class="small muted">และอีก ${list.length - 8} ชุด</div>` : "") : `<div class="small muted">ยังไม่มีไฟล์สำรอง</div>`}
+  </div>`;
+}
+function linePanel(){
+  if (!isMgr()) return "";
+  const L = S.line;
+  if (!L) return `<div class="card panel"><h3>แจ้งเตือนผ่าน LINE</h3><div class="small muted">กำลังโหลด…</div></div>`;
+  const ev = [["shiftClose","สรุปยอดตอนปิดกะ"],["lowStock","สต็อกใกล้หมด"],["preorderDue","ออเดอร์ล่วงหน้าที่ต้องรับพรุ่งนี้"],["backupFail","สำรองข้อมูลไม่สำเร็จ"]];
+  return `<form id="lineForm" class="card panel form"><div class="row"><h3>แจ้งเตือนผ่าน LINE</h3><label class="check"><input type="checkbox" id="ln-on" ${L.enabled ? "checked" : ""}> เปิดใช้</label></div>
+    <ol class="lineguide"><li>สร้าง LINE Official Account ของร้าน แล้วเปิด Messaging API ที่ LINE Developers Console</li><li>ออก <b>Channel access token</b> (long-lived) แล้ววางด้านล่าง</li>
+      <li>ใส่ <b>User ID</b> ของเจ้าของ (ขึ้นต้นด้วย U หน้า Basic settings) หรือ Group ID ของกลุ่มที่เชิญบัญชีร้านเข้าไป</li><li>ให้เจ้าของเพิ่มบัญชีร้านเป็นเพื่อนก่อน แล้วกด ส่งข้อความทดสอบ</li></ol>
+    <div class="field"><label for="ln-token">Channel access token ${L.hasToken ? `<span class="pill green">บันทึกไว้แล้ว ${esc(L.tokenHint)}</span>` : ""}</label><input id="ln-token" type="password" autocomplete="off" placeholder="${L.hasToken ? "เว้นว่างถ้าไม่เปลี่ยน" : "วาง token ที่นี่"}"></div>
+    <div class="field"><label for="ln-to">ส่งถึง (User ID / Group ID)</label><input id="ln-to" maxlength="64" value="${esc(L.to)}" placeholder="U0123456789abcdef0123456789abcdef"></div>
+    <div class="field"><span class="lab">แจ้งเตือนเรื่อง</span>${ev.map(([k, v]) => `<label class="check"><input type="checkbox" data-lnev="${k}" ${L.events[k] ? "checked" : ""}> ${v}</label>`).join("")}</div>
+    <div class="field"><label for="ln-hour">เวลาส่งรายการออเดอร์ล่วงหน้าของพรุ่งนี้</label><select id="ln-hour">${Array.from({length: 24}, (_, h) => `<option value="${h}" ${+L.reminderHour === h ? "selected" : ""}>${String(h).padStart(2, "0")}:00 น.</option>`).join("")}</select></div>
+    ${L.lastError ? `<p class="small" style="color:var(--rose);margin:0">ส่งล่าสุดไม่สำเร็จ: ${esc(L.lastError)}</p>` : L.lastSent ? `<p class="small muted" style="margin:0">ส่งสำเร็จล่าสุด ${thDate(+L.lastSent)} ${hm(+L.lastSent)}</p>` : ""}
+    <div class="err" id="lnErr"></div>
+    <div class="actions"><button type="button" class="btn" data-linetest>ส่งข้อความทดสอบ</button><button class="btn primary">บันทึกการแจ้งเตือน</button></div></form>`;
+}
+async function saveLine(){
+  const events = {}; $$("[data-lnev]").forEach(x => events[x.dataset.lnev] = x.checked);
+  const body = {enabled: $("#ln-on").checked, to: $("#ln-to").value.trim(), events, reminderHour: +$("#ln-hour").value};
+  if ($("#ln-token").value.trim()) body.token = $("#ln-token").value.trim();
+  try { S.line = (await api.req("PUT", "/api/line", body)).line; clearDraft(); render(); toast("บันทึกการแจ้งเตือนแล้ว"); return true; }
+  catch (e) { $("#lnErr").textContent = e.message; return false; }
+}
+
+/* ---------- clicks & forms for the pages above ---------- */
+async function opsClick(b, d){
+  if (d.preday) { S.preDay = d.preday; render(); return true; }
+  if (d.preedit !== undefined) { openPreForm(d.preedit || null); return true; }
+  const P = id => S.preorders.find(p => p.id === id);
+  if (d.prepick) { openPickup(P(d.prepick)); return true; }
+  if (d.precancel) { openPreCancel(P(d.precancel)); return true; }
+  if (d.preslip) { preSlip(P(d.preslip)); return true; }
+  if (d.preready) { if (await store.call("POST", `/api/preorders/${d.preready}/ready`, {})) toast("ทำเสร็จแล้ว รอลูกค้ามารับ"); return true; }
+  if (d.shiftpdf) { const s = (S.shiftHist || []).find(x => x.id === d.shiftpdf); if (s) shiftPDF(s); return true; }
+  if ("bakepdf" in d) { elementToPDF(bakeSheet(S.bake), 794, `bake-plan-${S.bake.plan.tomorrow}.pdf`, "a4"); return true; }
+  if ("promotemplate" in d) {
+    const r = await store.call("PUT", "/api/promos/" + uid("p"), {name: "ใกล้ปิดร้าน ขนมอบลด 30%", type: "percent", scope: "cat", cat: "bread", value: 30, days: [], start: "19:00", end: "21:00", active: true});
+    if (r) { toast("สร้างโปรแล้ว แก้เวลาและหมวดได้ที่ปุ่มแก้ไข"); } return true; }
+  if ("backupnow" in d) { b.disabled = true; try { await api.req("POST", "/api/backups"); toast("สำรองข้อมูลแล้ว"); viewLoad("shop"); } catch (e) { toast(e.message); } b.disabled = false; return true; }
+  if (d.backupdl) {
+    try { const res = await fetch("/api/backups/" + encodeURIComponent(d.backupdl), {headers: {Authorization: "Bearer " + api.token}}); if (!res.ok) throw new Error("ดาวน์โหลดไม่สำเร็จ"); await store.save(d.backupdl, await res.blob()); }
+    catch (e) { toast(e.message); } return true; }
+  if ("linetest" in d) { b.disabled = true; if (await saveLine()) { try { S.line = (await api.req("POST", "/api/line/test")).line; render(); toast("ส่งข้อความทดสอบแล้ว เช็ก LINE ได้เลย"); } catch (e) { toast(e.message); viewLoad("shop"); } } b.disabled = false; return true; }
+  return false;
+}
+document.addEventListener("submit", async e => {
+  const id = e.target.id;
+  if (!["openShiftForm", "moveForm", "closeShiftForm", "wasteForm", "lineForm"].includes(id)) return;
+  e.preventDefault();
+  if (id === "openShiftForm") { const r = await store.call("POST", "/api/shifts/open", {openingCash: +$("#os-cash").value || 0}); if (r) { S.shift = r.shift; clearDraft(); toast("เปิดกะแล้ว เริ่มขายได้เลย"); S.view = "pos"; render(); } }
+  if (id === "moveForm") { if (await store.call("POST", "/api/shifts/current/moves", {kind: $("#mv-kind").value, amount: +$("#mv-amt").value, reason: $("#mv-why").value})) { clearDraft(); toast("บันทึกแล้ว"); } }
+  if (id === "closeShiftForm") {
+    const counts = {}; DENOMS.forEach(d => { const n = Math.floor(+$("#dn-" + d).value || 0); if (n) counts[d] = n; });
+    const r = await store.call("POST", "/api/shifts/current/close", {counts, note: $("#cs-note").value});
+    if (r) { clearDraft(); S.shift = null; viewLoad("shift");
+      modal(`<div class="mh"><h2>ปิดกะแล้ว</h2><button class="x" data-close aria-label="ปิด">×</button></div>
+        <div class="diff ${r.shift.diff === 0 ? "ok" : r.shift.diff < 0 ? "bad" : "over"}"><span>ส่วนต่าง</span><span>${r.shift.diff === 0 ? "ตรงพอดี" : (r.shift.diff > 0 ? "เกิน " : "ขาด ") + baht(Math.abs(r.shift.diff), 1)}</span></div>
+        ${shiftSlip(r.shift)}<div class="actions"><button class="btn" id="slipPdf">ดาวน์โหลดสรุปกะ PDF</button><button class="btn primary" data-close>เสร็จ</button></div>`);
+      $("#slipPdf").onclick = () => shiftPDF(r.shift); } }
+  if (id === "wasteForm") {
+    const items = $$("[data-wq]").map(x => ({menuId: x.dataset.wq, qty: Math.floor(+x.value || 0)})).filter(x => x.qty > 0);
+    if (!items.length) { toast("ใส่จำนวนที่ทิ้งอย่างน้อย 1 เมนู"); return; }
+    if (await store.call("POST", "/api/waste", {items, reason: $("#w-why").value})) { clearDraft(); toast("บันทึกของที่ทิ้งแล้ว"); viewLoad("bake"); } }
+  if (id === "lineForm") await saveLine();
+});
 
 /* ================= modal / toast ================= */
 function modal(html, cls = "", focus = true){
@@ -1454,8 +1860,9 @@ document.addEventListener("click", async e => {
   if ("pindel" in d) { pinBuf = pinBuf.slice(0, -1); return drawDots(); }
   if ("pinback" in d) { pinFor = null; return render(); }
   if ("themetoggle" in d) return toggleTheme();
+  if (await opsClick(b, d)) return;
   if ("lock" in d) return lock();
-  if (d.nav) { clearDraft(); S.view = d.nav; ss.set("crumb-view", d.nav); if (d.nav === "report") S.rep.orders = null; window.scrollTo(0, 0); return render(); }
+  if (d.nav) { clearDraft(); viewLoad(d.nav); S.view = d.nav; ss.set("crumb-view", d.nav); if (d.nav === "report") S.rep.orders = null; window.scrollTo(0, 0); return render(); }
   if (d.cat) { S.cat = d.cat; return render(); }
   if (d.add) { const m = S.menu.find(x => x.id === d.add); if (!m) return; return (m.opts?.length || m.sweet) ? openOptions(m) : addToCart(m); }
   if (d.inc) { const l = S.cart.find(x => x.key === d.inc), m = S.menu.find(x => x.id === l?.id);
@@ -1520,7 +1927,7 @@ document.addEventListener("submit", async e => {
     const pp = v("s-pp").replace(/\D/g, "");
     if (pp && !promptPayPayload(pp, 1)) { toast("หมายเลขพร้อมเพย์ต้องเป็นเบอร์มือถือ 10 หลัก หรือเลข 13/15 หลัก"); return; }
     const data = {name: v("s-name") || "ร้านของฉัน", tagline: v("s-tag"), branch: v("s-branch"), phone: v("s-phone"), address: v("s-addr"), taxId: v("s-tax"), vat: v("s-vat"), promptpay: pp, footer: v("s-foot"),
-      pointsPer: Math.max(1, +v("s-pper") || 25)};
+      pointsPer: Math.max(1, +v("s-pper") || 25), birthdayMultiplier: Math.min(5, Math.max(1, +v("s-bmul") || 1)), dayStartHour: +v("s-dsh") || 0, lowStockAt: Math.max(0, +v("s-low") || 0)};
     if (await store.call("PUT", "/api/config/shop", data)) { clearDraft(); toast("บันทึกข้อมูลร้านแล้ว"); } }
 });
 document.addEventListener("keydown", e => {

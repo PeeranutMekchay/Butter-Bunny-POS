@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Butter Bunny · เรียกคิว</title>
+<link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+<link rel="stylesheet" href="/vendor/fonts/itim/400.css">
+<link rel="stylesheet" href="/vendor/fonts/mitr/400.css">
+<link rel="stylesheet" href="/vendor/fonts/mitr/500.css">
+<script>try { document.documentElement.dataset.theme = localStorage.getItem("bb-theme") === "dark" ? "dark" : "light"; } catch { document.documentElement.dataset.theme = "light"; }</script>
+<style>
+/* Customer-facing queue board: "ready" numbers are the hero, "preparing" sits quietly beside them */
+:root{
+  --bg:#FFFAFC; --surface:#FFFFFF; --soft:#FFF0F5; --line:#F7E1EA; --fg:#4A2F3A; --muted:#9A7D88;
+  --accent:#C8456F; --on-accent:#FFFFFF; --accent-soft:#FCE3EC; --brand-ink:#8E3B5E; --butter:#F7D774; --dot:rgb(232 120 160/.10);
+  --ff-brand:"Itim","Mitr",system-ui,sans-serif; --ff-num:"Mitr",system-ui,sans-serif;
+}
+:root[data-theme="dark"]{
+  --bg:#241912; --surface:#33241A; --soft:#402E21; --line:#55402D; --fg:#FBEEDC; --muted:#CDB394;
+  --accent:#F2C14E; --on-accent:#3A2510; --accent-soft:#4D3A20; --brand-ink:#FFD99A; --butter:#F2C14E; --dot:rgb(255 215 150/.05); color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg) radial-gradient(var(--dot) 1.6px,transparent 1.9px) 0 0/24px 24px;color:var(--fg);font-family:var(--ff-num);overflow:hidden}
+.wrap{height:100%;display:grid;grid-template-rows:auto 1fr auto;gap:2vh;padding:3vh max(3vw,env(safe-area-inset-right,0px)) 2vh max(3vw,env(safe-area-inset-left,0px))}
+header{display:flex;align-items:center;gap:1.6vw}
+header svg{width:9vh;height:9vh;flex:none}
+.brand{font-family:var(--ff-brand);font-size:5.4vh;line-height:1;color:var(--brand-ink)}
+.tag{color:var(--muted);font-size:2.2vh;margin-top:.6vh}
+.clock{margin-left:auto;text-align:right;font-size:5vh;color:var(--brand-ink);font-variant-numeric:tabular-nums;line-height:1}
+.clock small{display:block;font-size:2vh;color:var(--muted);margin-top:.6vh}
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2.2fr);gap:2.4vw;min-height:0}
+.col{background:var(--surface);border:1px solid var(--line);border-radius:3vh;padding:2.6vh 2vw;display:flex;flex-direction:column;min-height:0;box-shadow:0 8px 30px rgb(150 60 90/.08)}
+.col h2{font-family:var(--ff-brand);font-weight:400;font-size:3.6vh;margin:0 0 2vh;display:flex;align-items:center;gap:1vw;color:var(--brand-ink)}
+.col h2 i{width:1.6vh;height:1.6vh;border-radius:50%;background:var(--muted)}
+.ready h2 i{background:var(--accent);box-shadow:0 0 0 .6vh var(--accent-soft)}
+.list{display:flex;flex-wrap:wrap;gap:1.4vh;align-content:flex-start;overflow:hidden}
+.prep .n{font-size:4.4vh;padding:.8vh 1.6vw;border-radius:1.6vh;background:var(--soft);color:var(--fg);font-variant-numeric:tabular-nums}
+.ready .list{gap:2vh}
+.ready .n{font-size:10vh;line-height:1;padding:2.2vh 2.4vw;border-radius:2.6vh;background:var(--accent-soft);color:var(--brand-ink);font-weight:500;font-variant-numeric:tabular-nums;position:relative}
+.ready .n.new{background:var(--accent);color:var(--on-accent);animation:pop .7s ease-out, glow 1.6s ease-in-out 3}
+.n small{display:block;font-size:.26em;font-weight:400;opacity:.75;margin-top:.4em;text-align:center}
+.empty{color:var(--muted);font-size:2.6vh}
+footer{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:2vh}
+footer button{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:.8vh 1.6vw;cursor:pointer}
+.dot{display:inline-block;width:1.2vh;height:1.2vh;border-radius:50%;background:var(--accent);margin-right:.6vw;vertical-align:middle}
+.dot.off{background:var(--muted)}
+#sound{position:fixed;inset:0;display:grid;place-items:center;background:rgb(40 20 30/.35);z-index:5}
+#sound button{font:inherit;font-family:var(--ff-brand);font-size:3.4vh;border:0;border-radius:3vh;padding:3vh 4vw;background:var(--surface);color:var(--brand-ink);box-shadow:0 20px 50px rgb(0 0 0/.25);cursor:pointer}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1)}}
+@keyframes glow{50%{box-shadow:0 0 0 1.4vh var(--accent-soft)}}
+@media (prefers-reduced-motion:reduce){.ready .n.new{animation:none}}
+@media (max-width:700px),(orientation:portrait){
+  body{overflow:auto} main{grid-template-columns:1fr} .ready{order:-1}
+  .ready .n{font-size:7vh} .brand{font-size:4vh} .clock{font-size:3.6vh}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span id="logo"></span>
+    <div><div class="brand" id="shop">Butter Bunny</div><div class="tag">ขอบคุณที่รอนะคะ เรียกเลขคิวแล้วรับได้ที่เคาน์เตอร์</div></div>
+    <div class="clock" id="clock"></div>
+  </header>
+  <main>
+    <section class="col prep"><h2><i></i>กำลังเตรียม</h2><div class="list" id="prep"></div></section>
+    <section class="col ready"><h2><i></i>พร้อมรับแล้ว</h2><div class="list" id="ready"></div></section>
+  </main>
+  <footer><span><span class="dot" id="live"></span><span id="liveText">กำลังเชื่อมต่อ…</span></span>
+    <span><button id="soundBtn">เปิดเสียงเรียกคิว</button> <button id="fs">เต็มจอ</button></span></footer>
+</div>
+<div id="sound"><button id="soundOn">แตะเพื่อเปิดเสียงเรียกคิว</button></div>
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const pad = n => "#" + String(n).padStart(3, "0");
+fetch("/assets/logo.svg").then(r => r.text()).then(t => $("#logo").innerHTML = t).catch(() => {});
+
+let audio = null, seen = null, newest = new Set(), today = "";
+function chime(){
+  if (!audio) return;
+  const t = audio.currentTime;
+  [[880, 0], [1320, .18]].forEach(([f, d]) => {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = "sine"; o.frequency.value = f; o.connect(g); g.connect(audio.destination);
+    g.gain.setValueAtTime(0, t + d); g.gain.linearRampToValueAtTime(.25, t + d + .02); g.gain.exponentialRampToValueAtTime(.001, t + d + .9);
+    o.start(t + d); o.stop(t + d + 1);
+  });
+}
+function say(nums){
+  try {
+    const v = speechSynthesis.getVoices().find(x => x.lang && x.lang.toLowerCase().startsWith("th"));
+    if (!v || !audio) return;
+    const u = new SpeechSynthesisUtterance("เชิญคิวที่ " + nums.join(" และ ") + " ค่ะ"); u.voice = v; u.lang = v.lang; u.rate = .95;
+    setTimeout(() => speechSynthesis.speak(u), 900);
+  } catch {}
+}
+function enableSound(){
+  try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); chime(); } catch {}
+  $("#sound").hidden = true; $("#soundBtn").textContent = "เสียงเปิดอยู่"; $("#soundBtn").disabled = true;
+}
+$("#soundOn").onclick = enableSound; $("#soundBtn").onclick = enableSound;
+$("#sound").addEventListener("click", e => { if (e.target.id === "sound") { $("#sound").hidden = true; } });
+$("#fs").onclick = () => document.documentElement.requestFullscreen?.().catch(() => {});
+
+const label = q => q.day !== today ? `<small>จากเมื่อวาน</small>` : (q.type === "take" ? `<small>กลับบ้าน</small>` : "");
+function paint(d){
+  today = d.today;
+  $("#shop").textContent = (d.shop.name || "Butter Bunny").replace(/\s+[฀-๿].*$/, "");
+  const key = q => q.day + "#" + q.queue;
+  const readyKeys = d.ready.map(key);
+  if (seen) {
+    const fresh = d.ready.filter(q => !seen.has(key(q)));
+    if (fresh.length) { fresh.forEach(q => newest.add(key(q))); chime(); say(fresh.map(q => q.queue)); setTimeout(() => { fresh.forEach(q => newest.delete(key(q))); }, 20000); }
+  }
+  seen = new Set(readyKeys);
+  $("#prep").innerHTML = d.preparing.length ? d.preparing.map(q => `<span class="n">${pad(q.queue)}</span>`).join("") : `<span class="empty">ยังไม่มีคิวที่กำลังทำ</span>`;
+  $("#ready").innerHTML = d.ready.length ? d.ready.map(q => `<span class="n ${newest.has(key(q)) ? "new" : ""}">${pad(q.queue)}${label(q)}</span>`).join("") : `<span class="empty">รอสักครู่นะคะ</span>`;
+}
+let t;
+const load = () => fetch("/api/queue").then(r => r.json()).then(paint).catch(() => {});
+const soon = () => { clearTimeout(t); t = setTimeout(load, 120); };
+function connect(){
+  const es = new EventSource("/api/events");
+  es.onmessage = e => { try { if (JSON.parse(e.data).topics.some(x => x === "orders" || x === "hello")) soon(); } catch {} };
+  es.onopen = () => { $("#live").className = "dot"; $("#liveText").textContent = "อัปเดตอัตโนมัติ"; };
+  es.onerror = () => { $("#live").className = "dot off"; $("#liveText").textContent = "ขาดการเชื่อมต่อ กำลังลองใหม่…"; };
+}
+function tick(){
+  const n = new Date();
+  $("#clock").innerHTML = n.toLocaleTimeString("th-TH", {hour: "2-digit", minute: "2-digit"}) + `<small>${n.toLocaleDateString("th-TH", {weekday: "long", day: "numeric", month: "long"})}</small>`;
+}
+tick(); setInterval(tick, 15000); setInterval(load, 30000);
+load(); connect();
+})();
+</script>
+</body>
+</html>

@@ -45,6 +45,8 @@ function checkout(db, body, staff, now = new Date()) {
   const shop = R.getShop(db);
   if (pay === "qr" && !shop.promptpay) throw bad("ร้านยังไม่ได้ตั้งค่าหมายเลขพร้อมเพย์");
   return tx(db, () => {
+    const shift = db.prepare("SELECT id FROM shifts WHERE closed_at IS NULL").get();
+    if (!shift) throw new HttpError(409, "ยังไม่ได้เปิดกะ กดเปิดกะก่อนเริ่มขาย");
     const member = body.memberPhone ? R.getMember(db, String(body.memberPhone)) : null;
     if (body.memberPhone && !member) throw bad("ไม่พบสมาชิกนี้");
     const lines = buildLines(db, body.lines, member);
@@ -76,7 +78,7 @@ function checkout(db, body, staff, now = new Date()) {
     }
     if (member && member.points < P.pointsUsed) throw new HttpError(409, `แต้มของ ${member.name || member.id} ไม่พอ (มี ${member.points} ต้องใช้ ${P.pointsUsed})`);
 
-    const t = now.getTime(), day = pricing.dayKey(now), oid = newId("o");
+    const t = now.getTime(), day = R.bday(db, now), oid = newId("o");
     const queue = db.prepare("SELECT COALESCE(MAX(queue), 0) + 1 q FROM orders WHERE day = ?").get(day).q;
     db.prepare(`INSERT INTO orders (id, day, queue, created_at, type, status, pay, ref, subtotal, promos, promo_total, manual, points_used, points_disc, voucher_name,
       total, vat, tendered, change, note, member_phone, member_name, points_earned, staff_id, staff_name) VALUES (?,?,?,?,?,'preparing',?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
@@ -85,7 +87,14 @@ function checkout(db, body, staff, now = new Date()) {
       member?.id ?? null, member?.name ?? null, P.pointsEarned, staff.id, staff.name);
     const ins = db.prepare("INSERT INTO order_items (order_id, line, menu_id, name, cat, unit, qty, opt, sweet, reward_id, pts) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
     lines.forEach((l, i) => ins.run(oid, i + 1, l.id, l.name, l.cat, l.unit, l.qty, l.opt, l.sweet, l.reward, l.pts));
-    for (const [mid, q] of Object.entries(needMenu)) if (R.stockQty(db, mid) != null) R.addStock(db, mid, -q);
+    db.prepare("UPDATE orders SET shift_id = ? WHERE id = ?").run(shift.id, oid);
+    const lowStock = [], th = Number(shop.lowStockAt) || 0;
+    for (const [mid, q] of Object.entries(needMenu)) {
+      const before = R.stockQty(db, mid); if (before == null) continue;
+      R.addStock(db, mid, -q);
+      const after = Math.max(0, before - q);
+      if (before > th && after <= th) lowStock.push({ name: lines.find(l => l.id === mid).name, qty: after });
+    }
     for (const [rid, q] of Object.entries(needReward)) R.addStock(db, "rw-" + rid, -q);
     if (member) {
       db.prepare("UPDATE members SET points = points - ? + ?, visits = visits + 1, spent = ROUND(spent + ?, 2), last_visit = ? WHERE phone = ?").run(P.pointsUsed, P.pointsEarned, P.total, t, member.id);
@@ -96,7 +105,7 @@ function checkout(db, body, staff, now = new Date()) {
       for (const l of lines) if (l._reward) logR(l._reward, l.qty);
       if (voucher) logR(voucher, 1);
     }
-    return R.getOrder(db, oid);
+    return { order: R.getOrder(db, oid), lowStock };
   });
 }
 
@@ -151,7 +160,7 @@ function redeemDirect(db, {memberPhone, rewardId}, staff, now = new Date()) {
     if (r.limited) R.addStock(db, "rw-" + r.id, -1);
     if (itemQty != null) R.addStock(db, item.id, -1);
     db.prepare(`INSERT INTO redeems (id, day, created_at, member_phone, member_name, reward_id, reward_name, kind, qty, points, staff_name, via)
-      VALUES (?,?,?,?,?,?,?,?,1,?,?,'direct')`).run(rid, pricing.dayKey(now), t, m.id, m.name, r.id, r.name, r.kind, r.points, staff.name);
+      VALUES (?,?,?,?,?,?,?,?,1,?,?,'direct')`).run(rid, R.bday(db, now), t, m.id, m.name, r.id, r.name, r.kind, r.points, staff.name);
     return { redeem: R.redeemOut(db.prepare("SELECT * FROM redeems WHERE id = ?").get(rid)), member: R.getMember(db, m.id) };
   });
 }

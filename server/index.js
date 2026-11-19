@@ -11,7 +11,9 @@ const HOST = process.env.HOST || "0.0.0.0";
 
 const db = openDb(process.env.DB_FILE || path.join(DATA, "butterbunny.db"));
 if (seedIfEmpty(db)) console.log("โหลดเมนู โปรโมชั่น และของรางวัลเริ่มต้นแล้ว");
-const app = createApp({ db, uploadsDir: path.join(DATA, "uploads") });
+const backupDir = path.join(DATA, "backups");
+const app = createApp({ db, uploadsDir: path.join(DATA, "uploads"), backupDir });
+require("./jobs").startJobs(db, { backupDir, backupHour: Number(process.env.BACKUP_HOUR ?? 3) });
 
 app.listen(PORT, HOST, () => {
   console.log(`\nButter Bunny POS พร้อมใช้งาน`);

@@ -19,6 +19,9 @@ const shots = process.argv[3] || path.join(__dirname, "..", "data");
   await p.fill("#su-name", "นุ่น"); await p.fill("#su-pin", "1234"); await p.fill("#su-pin2", "1234"); await p.click("#setupForm button.primary");
   await p.waitForSelector("[data-add]");
   step("setup signs in and loads 32 seeded menu items", (await p.$$("[data-add]")).length === 32);
+  step("sale screen asks to open a shift first", (await p.textContent(".banner.warn")).includes("ยังไม่ได้เปิดกะ"));
+  await p.click(".banner.warn [data-nav=shift]"); await p.fill("#os-cash", "1000"); await p.click("#openShiftForm button.primary");
+  await p.waitForSelector("[data-add]"); step("open shift returns to the sale screen", !(await p.$(".banner.warn [data-nav=shift]")));
 
   // sell 4 egg tarts (buy 3 get 1) + iced latte
   for (let i = 0; i < 4; i++) await clickItem("ทาร์ตไข่");
@@ -79,6 +82,37 @@ const shots = process.argv[3] || path.join(__dirname, "..", "data");
   step("PromptPay QR is drawn", await p.$eval("#ppCanvas", c => c.width > 100).catch(() => false));
   await p.fill("#payRef", "SLIP123"); await p.click("#confirmPay"); await p.waitForSelector("#rcpt");
   step("QR payment saved with slip reference", (await p.textContent("#rcpt")).includes("พร้อมเพย์ SLIP123"));
+  await p.click(".modal [data-close]");
+
+  // customer queue screen shows the ready order
+  const qp = await ctx.newPage(); await qp.goto(base + "/queue"); await qp.click("#soundOn"); await qp.waitForTimeout(500);
+  step("queue screen lists orders", (await qp.textContent("main")).includes("#00"));
+  await p.click("[data-nav=orders]"); await p.locator("[data-st]").first().click(); await qp.waitForTimeout(800);
+  await qp.screenshot({ path: path.join(shots, "e2e-queue.png") });
+  step("queue screen updates live when an order is ready", (await qp.textContent(".ready")).includes("#00"));
+
+  // pre-order with deposit, then pickup
+  await p.click("[data-nav=pre]"); await p.click('[data-preedit=""]');
+  await p.fill("#pf-cus", "คุณแพร"); await p.fill("#pf-phone", "0891112222"); await p.fill("#pf-title", "เค้กช็อกโกแลต 2 ปอนด์"); await p.fill("#pf-msg", "Happy Birthday แพร");
+  await p.fill("#pf-total", "900"); await p.fill("#pf-dep", "300"); await p.click("#preForm button.primary"); await p.waitForTimeout(800);
+  step("pre-order saved with balance", (await p.textContent(".main")).includes("ค้างจ่าย"));
+  await p.screenshot({ path: path.join(shots, "e2e-pre.png") });
+  await p.click('[data-preday="all"]'); await p.click("[data-prepick]"); await p.fill("#pk-cash", "1000"); await p.click("#pkYes"); await p.waitForTimeout(600);
+  step("pre-order picked up", (await p.textContent("#toastRoot")).includes("ทอนเงิน ฿400"));
+  // waste & bake plan
+  await p.click("[data-nav=bake]"); await p.waitForSelector("#wasteForm");
+  await p.fill("#wq-m-cookie", "2"); await p.click("#wasteForm button.primary"); await p.waitForTimeout(600);
+  step("waste recorded", (await p.textContent("#wasteForm")).includes("คุกกี้ช็อกชิพ ×2"));
+  await p.screenshot({ path: path.join(shots, "e2e-bake.png"), fullPage: true });
+  // dashboard
+  await p.click("[data-nav=dash]"); await p.waitForSelector(".kpi .v"); await p.waitForTimeout(300);
+  step("dashboard shows today's sales", (await p.textContent(".kpis")).includes("ยอดขายวันนี้"));
+  await p.screenshot({ path: path.join(shots, "e2e-dash.png") });
+  // close the shift with counted cash
+  await p.click("[data-nav=shift]"); await p.waitForSelector("#closeShiftForm");
+  await p.screenshot({ path: path.join(shots, "e2e-shift.png"), fullPage: true });
+  await p.fill("#dn-1000", "2"); await p.click("#closeShiftForm button.primary"); await p.waitForSelector("#slipPdf");
+  step("shift closes and shows the difference", (await p.textContent(".modal .diff")).includes("ส่วนต่าง"));
   await p.click(".modal [data-close]");
 
   // lock → login screen

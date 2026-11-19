@@ -3,16 +3,18 @@ const path = require("node:path");
 const fs = require("node:fs");
 const crypto = require("node:crypto");
 const express = require("express");
-const { dayKey } = require("../shared/pricing");
 const R = require("./repo");
 const A = require("./auth");
 const S = require("./services");
+const O = require("./ops");
+const N = require("./notify");
+const B = require("./backup");
 const { HttpError, DAY_RE } = R;
 
 const ROOT = path.join(__dirname, "..");
 const MAGIC = [[[0xff, 0xd8, 0xff], "jpg"], [[0x89, 0x50, 0x4e, 0x47], "png"], [[0x52, 0x49, 0x46, 0x46], "webp"]];
 
-function createApp({ db, uploadsDir }) {
+function createApp({ db, uploadsDir, backupDir = path.join(uploadsDir, "..", "backups") }) {
   fs.mkdirSync(uploadsDir, { recursive: true });
   const app = express();
   app.disable("x-powered-by");
@@ -31,6 +33,8 @@ function createApp({ db, uploadsDir }) {
 
   /* ---------- helpers ---------- */
   const wrap = fn => (req, res, next) => { try { const out = fn(req, res); if (out !== undefined) res.json(out); } catch (e) { next(e); } };
+  const wrapAsync = fn => (req, res, next) => Promise.resolve(fn(req, res)).then(out => { if (out !== undefined) res.json(out); }, next);
+  const notify = N.makeNotifier(db);
   const auth = (req, _res, next) => {
     const h = req.get("authorization") || "";
     req.token = h.startsWith("Bearer ") ? h.slice(7) : "";
@@ -56,6 +60,8 @@ function createApp({ db, uploadsDir }) {
     const menu = R.listMenu(db).filter(m => m.active && m.img).slice(0, 7).map(m => ({ id: m.id, name: m.name, cat: m.cat, img: m.img, active: true }));
     return { needsSetup: db.prepare("SELECT COUNT(*) n FROM staff").get().n === 0, shop: R.getShop(db), staff, menu };
   }));
+  // customer-facing queue screen (/queue): queue numbers only, no names or amounts
+  api.get("/queue", wrap(() => O.queueBoard(db)));
   api.post("/auth/setup", wrap(req => { const r = A.setup(db, req.body || {}); broadcast("staff"); return r; }));
   api.post("/auth/login", wrap(req => A.login(db, req.body || {})));
 
@@ -64,16 +70,52 @@ function createApp({ db, uploadsDir }) {
   api.post("/auth/logout", wrap(req => { A.logout(db, req.token); return { ok: true }; }));
   api.get("/auth/me", wrap(req => ({ staff: req.staff })));
   api.get("/bootstrap", wrap(req => {
-    const today = dayKey(new Date());
+    const today = R.bday(db);
+    // orders still open from the previous two days stay on the board until someone finishes them
+    const carry = db.prepare("SELECT id FROM orders WHERE day < ? AND day >= ? AND status IN ('preparing','ready')").all(today, R.shiftDays(today, -2)).map(r => R.getOrder(db, r.id));
     return { me: req.staff, shop: R.getShop(db), menu: R.listMenu(db), stock: R.listStock(db), promos: R.listPromos(db), rewards: R.listRewards(db),
-      members: R.listMembers(db), staff: R.listStaff(db, { activeOnly: req.staff.role !== "manager" }), today: { day: today, orders: R.listOrders(db, today, today), redeems: R.listRedeems(db, today, today) } };
+      members: R.listMembers(db), staff: R.listStaff(db, { activeOnly: req.staff.role !== "manager" }), shift: O.currentShift(db), preorders: O.listPreorders(db),
+      today: { day: today, orders: [...carry, ...R.listOrders(db, today, today)], redeems: R.listRedeems(db, today, today) } };
   }));
 
   // orders
-  api.post("/orders", wrap(req => { const order = S.checkout(db, req.body || {}, req.staff); broadcast("orders", "stock", "members", "redeems"); return { order }; }));
+  api.post("/orders", wrap(req => {
+    const { order, lowStock } = S.checkout(db, req.body || {}, req.staff);
+    broadcast("orders", "stock", "members", "redeems", "shift");
+    if (lowStock.length) notify("lowStock", N.lowStockText(lowStock));
+    return { order };
+  }));
   api.patch("/orders/:id/status", wrap(req => { const order = S.setStatus(db, req.params.id, req.body?.status); broadcast("orders"); return { order }; }));
-  api.post("/orders/:id/void", manager, wrap(req => { const order = S.voidOrder(db, req.params.id, req.body || {}, req.staff); broadcast("orders", "stock", "members", "redeems"); return { order }; }));
-  api.get("/orders", manager, wrap(req => { const [from, to] = range(req.query); return { orders: R.listOrders(db, from, to), redeems: R.listRedeems(db, from, to) }; }));
+  api.post("/orders/:id/void", manager, wrap(req => { const order = S.voidOrder(db, req.params.id, req.body || {}, req.staff); broadcast("orders", "stock", "members", "redeems", "shift"); return { order }; }));
+
+  // shifts & cash drawer (any staff can open/close; history is for managers)
+  api.get("/shifts/current", wrap(() => ({ shift: O.currentShift(db) })));
+  api.post("/shifts/open", wrap(req => { const shift = O.openShift(db, req.body || {}, req.staff); broadcast("shift"); return { shift }; }));
+  api.post("/shifts/current/moves", wrap(req => { const shift = O.addCashMove(db, req.body || {}, req.staff); broadcast("shift"); return { shift }; }));
+  api.post("/shifts/current/close", wrap(req => {
+    const shift = O.closeShift(db, req.body || {}, req.staff); broadcast("shift");
+    notify("shiftClose", N.shiftCloseText(R.getShop(db), shift));
+    return { shift };
+  }));
+  api.get("/shifts", manager, wrap(() => ({ shifts: O.listShifts(db, 60) })));
+
+  // cake / party pre-orders
+  api.get("/preorders", wrap(req => ({ preorders: req.query.from ? O.listPreorders(db, { from: range(req.query)[0], to: range(req.query)[1] }) : O.listPreorders(db) })));
+  api.post("/preorders", wrap(req => { const preorder = O.createPreorder(db, req.body || {}, req.staff); broadcast("preorders", "shift"); return { preorder }; }));
+  api.patch("/preorders/:id", wrap(req => { const preorder = O.updatePreorder(db, req.params.id, req.body || {}); broadcast("preorders"); return { preorder }; }));
+  api.post("/preorders/:id/ready", wrap(req => { const preorder = O.markPreorderReady(db, req.params.id); broadcast("preorders"); return { preorder }; }));
+  api.post("/preorders/:id/pickup", wrap(req => { const r = O.pickupPreorder(db, req.params.id, req.body || {}, req.staff); broadcast("preorders", "shift", "members"); return r; }));
+  api.post("/preorders/:id/cancel", wrap(req => { const preorder = O.cancelPreorder(db, req.params.id, req.body || {}, req.staff); broadcast("preorders", "shift"); return { preorder }; }));
+
+  // end-of-day waste and bake plan
+  api.post("/waste", wrap(req => { const waste = O.recordWaste(db, req.body || {}, req.staff); broadcast("stock", "waste"); return { waste }; }));
+  api.get("/waste", wrap(req => { const [from, to] = req.query.from ? range(req.query) : [R.bday(db), R.bday(db)]; return { waste: O.listWaste(db, from, to) }; }));
+  api.get("/bake-plan", wrap(() => O.bakePlan(db)));
+
+  // owner dashboard
+  api.get("/dashboard", manager, wrap(() => O.dashboard(db)));
+  api.get("/orders", manager, wrap(req => { const [from, to] = range(req.query); return { orders: R.listOrders(db, from, to), redeems: R.listRedeems(db, from, to),
+    preorderPayments: O.prePaymentsInRange(db, from, to), waste: O.listWaste(db, from, to) }; }));
 
   // members (staff can register members; editing points and deleting is manager-only)
   api.post("/members", wrap(req => { const member = R.createMember(db, req.body || {}); broadcast("members"); return { member }; }));
@@ -95,6 +137,25 @@ function createApp({ db, uploadsDir }) {
   api.put("/rewards/:id", manager, wrap(req => { const reward = R.saveReward(db, req.params.id, req.body || {}); broadcast("rewards", "stock"); return { reward }; }));
   api.delete("/rewards/:id", manager, wrap(req => { R.deleteReward(db, req.params.id); return changed("rewards", "stock"); }));
   api.put("/config/shop", manager, wrap(req => { const shop = R.saveShop(db, req.body || {}); broadcast("shop"); return { shop }; }));
+  // backups
+  api.get("/backups", manager, wrap(() => ({ backups: B.listBackups(backupDir), keep: B.KEEP })));
+  api.post("/backups", manager, wrap(() => ({ backup: B.backupNow(db, backupDir) })));
+  api.get("/backups/:name", manager, (req, res, next) => {
+    const file = B.backupPath(backupDir, req.params.name);
+    if (!file || !fs.existsSync(file)) return next(new HttpError(404, "ไม่พบไฟล์สำรองนี้"));
+    res.download(file);
+  });
+
+  // LINE notifications (token is write-only)
+  api.get("/line", manager, wrap(() => ({ line: N.publicLine(db) })));
+  api.put("/line", manager, wrap(req => ({ line: N.saveLine(db, req.body || {}) })));
+  api.post("/line/test", manager, wrapAsync(async () => {
+    const r = await N.send(db, `🐰 ทดสอบการแจ้งเตือนจาก ${R.getShop(db).name}`, { force: true });
+    if (r.skipped) throw R.bad("ใส่ Channel access token และผู้รับก่อน");
+    if (!r.ok) throw new HttpError(502, "ส่งไม่สำเร็จ: " + r.error);
+    return { ok: true, line: N.publicLine(db) };
+  }));
+
   api.put("/staff/:id", manager, wrap(req => { const staff = A.saveStaff(db, req.params.id, req.body || {}, req.staff); broadcast("staff"); return { staff }; }));
   api.delete("/staff/:id", manager, wrap(req => { A.deleteStaff(db, req.params.id, req.staff); return changed("staff"); }));
 
@@ -120,6 +181,7 @@ function createApp({ db, uploadsDir }) {
   vendor("/vendor/html2canvas", path.join(pkg("html2canvas"), "dist"));
   vendor("/vendor/qrcode", pkg("qrcode-generator"));
   vendor("/vendor/fonts", path.dirname(pkg("@fontsource/itim")));
+  app.get("/queue", (_req, res) => res.sendFile(path.join(ROOT, "public", "queue.html")));
   app.use(express.static(path.join(ROOT, "public")));
 
   // errors → JSON {error}

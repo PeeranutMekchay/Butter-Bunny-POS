@@ -159,3 +159,83 @@ CREATE TABLE IF NOT EXISTS redeems (
 );
 CREATE INDEX IF NOT EXISTS redeems_day ON redeems(day, created_at);
 CREATE INDEX IF NOT EXISTS redeems_order ON redeems(order_id);
+
+-- Cash drawer shifts. Only one shift is open at a time (closed_at IS NULL).
+CREATE TABLE IF NOT EXISTS shifts (
+  id            TEXT PRIMARY KEY,
+  opened_at     INTEGER NOT NULL,
+  opened_by     TEXT NOT NULL,
+  opening_cash  REAL NOT NULL DEFAULT 0,
+  closed_at     INTEGER,
+  closed_by     TEXT,
+  counted_cash  REAL,
+  expected_cash REAL,
+  counts        TEXT,                 -- JSON {"1000": n, "500": n, ...}
+  note          TEXT NOT NULL DEFAULT '',
+  summary       TEXT                  -- JSON snapshot taken at close
+);
+CREATE UNIQUE INDEX IF NOT EXISTS shifts_one_open ON shifts((closed_at IS NULL)) WHERE closed_at IS NULL;
+
+-- Cash put into or taken out of the drawer during a shift (e.g. buying ice).
+CREATE TABLE IF NOT EXISTS cash_moves (
+  id         TEXT PRIMARY KEY,
+  shift_id   TEXT NOT NULL REFERENCES shifts(id),
+  created_at INTEGER NOT NULL,
+  kind       TEXT NOT NULL CHECK (kind IN ('in', 'out')),
+  amount     REAL NOT NULL CHECK (amount > 0),
+  reason     TEXT NOT NULL DEFAULT '',
+  staff_name TEXT
+);
+
+-- Cake and party orders taken in advance, with a deposit.
+CREATE TABLE IF NOT EXISTS preorders (
+  id            TEXT PRIMARY KEY,
+  code          TEXT NOT NULL UNIQUE,   -- P0001, P0002, ...
+  created_at    INTEGER NOT NULL,
+  customer_name TEXT NOT NULL,
+  phone         TEXT NOT NULL DEFAULT '',
+  member_phone  TEXT,
+  pickup_day    TEXT NOT NULL,          -- YYYY-MM-DD
+  pickup_time   TEXT NOT NULL DEFAULT '',
+  title         TEXT NOT NULL,          -- what to make
+  details       TEXT NOT NULL DEFAULT '',
+  cake_message  TEXT NOT NULL DEFAULT '',
+  qty           INTEGER NOT NULL DEFAULT 1,
+  total         REAL NOT NULL CHECK (total >= 0),
+  status        TEXT NOT NULL CHECK (status IN ('pending', 'ready', 'picked', 'cancelled')),
+  note          TEXT NOT NULL DEFAULT '',
+  staff_name    TEXT,
+  ready_at      INTEGER,
+  picked_at     INTEGER,
+  cancelled_at  INTEGER,
+  cancel_reason TEXT
+);
+CREATE INDEX IF NOT EXISTS preorders_pickup ON preorders(pickup_day, status);
+
+CREATE TABLE IF NOT EXISTS preorder_payments (
+  id          TEXT PRIMARY KEY,
+  preorder_id TEXT NOT NULL REFERENCES preorders(id),
+  created_at  INTEGER NOT NULL,
+  day         TEXT NOT NULL,
+  kind        TEXT NOT NULL CHECK (kind IN ('deposit', 'balance', 'refund')),
+  amount      REAL NOT NULL,            -- refunds are negative
+  pay         TEXT NOT NULL CHECK (pay IN ('cash', 'qr', 'card')),
+  ref         TEXT NOT NULL DEFAULT '',
+  staff_name  TEXT,
+  shift_id    TEXT
+);
+CREATE INDEX IF NOT EXISTS preorder_payments_day ON preorder_payments(day);
+
+-- Pastries thrown away at closing time.
+CREATE TABLE IF NOT EXISTS waste (
+  id         TEXT PRIMARY KEY,
+  day        TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  menu_id    TEXT NOT NULL,
+  name       TEXT NOT NULL,
+  qty        INTEGER NOT NULL CHECK (qty > 0),
+  unit_price REAL NOT NULL DEFAULT 0,
+  reason     TEXT NOT NULL DEFAULT '',
+  staff_name TEXT
+);
+CREATE INDEX IF NOT EXISTS waste_day ON waste(day);

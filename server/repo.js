@@ -1,6 +1,6 @@
 // Data access: row ↔ API object mapping, validation and catalog CRUD.
 const { tx, b, json } = require("./db");
-const { DEFAULT_SHOP } = require("../shared/pricing");
+const { DEFAULT_SHOP, businessDay } = require("../shared/pricing");
 
 class HttpError extends Error { constructor(status, message) { super(message); this.status = status; } }
 const bad = msg => new HttpError(400, msg);
@@ -23,6 +23,12 @@ const num = (v, label, {min = 0, max = 1e7, int = false} = {}) => {
   if (!Number.isFinite(n) || n < min || n > max || (int && !Number.isInteger(n))) throw bad(`${label}ไม่ถูกต้อง`);
   return int ? n : Math.round(n * 100) / 100;
 };
+const birthday = v => {
+  if (v == null || v === "") return null;
+  const m = String(v).match(/^(\d{2})-(\d{2})$/);
+  if (!m || +m[1] < 1 || +m[1] > 12 || +m[2] < 1 || +m[2] > 31) throw bad("วันเกิดไม่ถูกต้อง");
+  return m[0];
+};
 const id = (v, label = "รหัส") => { if (!ID_RE.test(String(v || ""))) throw bad(`${label}ไม่ถูกต้อง`); return String(v); };
 const imgUrl = v => {
   if (v == null || v === "") return null;
@@ -35,7 +41,7 @@ const now = () => Date.now();
 /* ---------- mappers ---------- */
 const menuOut = r => ({ id: r.id, name: r.name, cat: r.cat, price: r.price, active: !!r.active, trackStock: !!r.track_stock, sweet: !!r.sweet, opts: json(r.opts, []), img: r.img, order: r.sort });
 const rewardOut = r => ({ id: r.id, name: r.name, kind: r.kind, itemId: r.item_id, value: r.value, points: r.points, blurb: r.blurb, active: !!r.active, limited: !!r.limited, img: r.img });
-const memberOut = r => ({ id: r.phone, name: r.name, points: r.points, visits: r.visits, spent: r.spent, createdAt: r.created_at, lastVisit: r.last_visit });
+const memberOut = r => ({ id: r.phone, name: r.name, birthday: r.birthday || null, points: r.points, visits: r.visits, spent: r.spent, createdAt: r.created_at, lastVisit: r.last_visit });
 const staffOut = r => ({ id: r.id, name: r.name, role: r.role, active: !!r.active });
 const redeemOut = r => ({ id: r.id, day: r.day, createdAt: r.created_at, memberId: r.member_phone, memberName: r.member_name, rewardId: r.reward_id, rewardName: r.reward_name,
   kind: r.kind, qty: r.qty, points: r.points, staffName: r.staff_name, via: r.via, orderId: r.order_id, voided: !!r.voided, voidAt: r.void_at, voidBy: r.void_by, restocked: !!r.restocked });
@@ -45,11 +51,14 @@ function orderOut(r, items) {
     subtotal: r.subtotal, promos: json(r.promos, []), promoTotal: r.promo_total, manual: r.manual, pointsUsed: r.points_used, pointsDisc: r.points_disc,
     voucherName: r.voucher_name, total: r.total, vat: r.vat, tendered: r.tendered, change: r.change, note: r.note,
     memberId: r.member_phone, memberName: r.member_name, pointsEarned: r.points_earned, staffId: r.staff_id, staffName: r.staff_name,
-    readyAt: r.ready_at, doneAt: r.done_at, voidReason: r.void_reason, voidBy: r.void_by, voidAt: r.void_at };
+    readyAt: r.ready_at, doneAt: r.done_at, voidReason: r.void_reason, voidBy: r.void_by, voidAt: r.void_at, shiftId: r.shift_id };
 }
 
 /* ---------- reads ---------- */
 const getShop = db => ({ ...DEFAULT_SHOP, ...json(db.prepare("SELECT value FROM config WHERE key = 'shop'").get()?.value, {}) });
+// today's business day (respects the shop's day start hour)
+const bday = (db, now = new Date()) => businessDay(now, getShop(db).dayStartHour);
+const shiftDays = (day, n) => { const d = new Date(day + "T12:00:00"); d.setDate(d.getDate() + n); const p = x => String(x).padStart(2, "0"); return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()); };
 const listMenu = db => db.prepare("SELECT * FROM menu ORDER BY cat, sort, name").all().map(menuOut);
 const getMenu = (db, mid) => { const r = db.prepare("SELECT * FROM menu WHERE id = ?").get(mid); return r ? menuOut(r) : null; };
 const listStock = db => Object.fromEntries(db.prepare("SELECT id, qty FROM stock").all().map(r => [r.id, { qty: r.qty }]));
@@ -160,13 +169,14 @@ function createMember(db, d) {
   const phone = String(d.phone || "").replace(/\D/g, "");
   if (!PHONE_RE.test(phone)) throw bad("เบอร์โทรต้องขึ้นต้นด้วย 0 และมี 9–10 หลัก");
   if (getMember(db, phone)) throw new HttpError(409, "เบอร์นี้เป็นสมาชิกอยู่แล้ว");
-  db.prepare("INSERT INTO members (phone, name, created_at) VALUES (?, ?, ?)").run(phone, str(d.name, 40, "ชื่อเล่น"), now());
+  db.prepare("INSERT INTO members (phone, name, birthday, created_at) VALUES (?, ?, ?, ?)").run(phone, str(d.name, 40, "ชื่อเล่น"), birthday(d.birthday), now());
   return getMember(db, phone);
 }
 function updateMember(db, phone, d, staff) {
   const m = getMember(db, phone); if (!m) throw new HttpError(404, "ไม่พบสมาชิกนี้");
   return tx(db, () => {
     if (d.name !== undefined) db.prepare("UPDATE members SET name = ? WHERE phone = ?").run(str(d.name, 40, "ชื่อเล่น"), phone);
+    if (d.birthday !== undefined) db.prepare("UPDATE members SET birthday = ? WHERE phone = ?").run(birthday(d.birthday), phone);
     if (d.points !== undefined) {
       if (staff.role !== "manager") throw new HttpError(403, "เฉพาะผู้จัดการที่แก้แต้มได้");
       const p = num(d.points, "แต้มสะสม", {int: true, max: 1e7});
@@ -195,12 +205,15 @@ function saveShop(db, d) {
   }
   if (d.vat !== undefined) out.vat = d.vat === "incl" ? "incl" : "none";
   if (d.pointsPer !== undefined) out.pointsPer = num(d.pointsPer, "อัตราแต้ม", {min: 1, max: 10000, int: true});
+  if (d.dayStartHour !== undefined) out.dayStartHour = num(d.dayStartHour, "เวลาเริ่มวันใหม่", {min: 0, max: 6, int: true});
+  if (d.birthdayMultiplier !== undefined) out.birthdayMultiplier = num(d.birthdayMultiplier, "ตัวคูณแต้มเดือนเกิด", {min: 1, max: 5, int: true});
+  if (d.lowStockAt !== undefined) out.lowStockAt = num(d.lowStockAt, "จำนวนแจ้งเตือนสต็อก", {min: 0, max: 999, int: true});
   db.prepare("INSERT INTO config (key, value) VALUES ('shop', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(JSON.stringify(out));
   return out;
 }
 
 module.exports = {
-  HttpError, bad, CATS, SWEET, PHONE_RE, DAY_RE, str, num, id,
+  HttpError, bad, CATS, SWEET, PHONE_RE, DAY_RE, str, num, id, bday, shiftDays,
   menuOut, rewardOut, memberOut, staffOut, orderOut, redeemOut,
   getShop, listMenu, getMenu, listStock, stockQty, listPromos, listRewards, getReward, listMembers, getMember, listStaff,
   listOrders, getOrder, listRedeems,
